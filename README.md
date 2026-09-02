@@ -3,8 +3,7 @@
 Một trang web tĩnh gom **439 chủ đề** cần học để đi từ nền tảng khoa học máy tính tới
 AI/ML engineering, xếp theo thứ tự ưu tiên, có đánh dấu tiến độ và **bài đọc soạn sẵn cho từng chủ đề**.
 
-**Truy cập:** trang được publish qua Cloudflare Pages và giới hạn bằng Cloudflare Access —
-chỉ các email trong danh sách cho phép mới mở được.
+**Demo:** https://minh27032004.github.io/My-Learning/
 
 ---
 
@@ -97,10 +96,9 @@ Chi tiết: [`docs/them-cong-nghe-moi.md`](docs/them-cong-nghe-moi.md).
 
 ## Ghi chú triển khai
 
-Site chạy trên **Cloudflare Pages**, build từ nhánh `main`, không có bước build
-(output directory là thư mục gốc). File `.nojekyll` giữ lại để trang vẫn deploy được
-lên GitHub Pages nếu cần — Jekyll bỏ qua mọi file bắt đầu bằng `_`, và dự án có hai
-file `_manifest.js` là bộ nạp trung tâm, thiếu chúng thì trang trắng.
+Site chạy trên **GitHub Pages**, phục vụ thẳng nhánh `main` từ thư mục gốc, không có
+bước build. File `.nojekyll` là **bắt buộc**: Jekyll bỏ qua mọi file bắt đầu bằng `_`,
+mà dự án có hai file `_manifest.js` đóng vai bộ nạp trung tâm — thiếu chúng thì trang trắng.
 
 ---
 
