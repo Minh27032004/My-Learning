@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cài đặt — Bản đồ học tập</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%230d1016%22%2F%3E%3Cpath%20d%3D%22M7%2025%20L13%2025%20A6%206%200%200%200%2019%2019%20L19%2015%22%20fill%3D%22none%22%20stroke%3D%22%2366738a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2219%22%20cy%3D%229%22%20r%3D%224.5%22%20fill%3D%22%23f0724f%22%2F%3E%3C%2Fsvg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/hoc.css">
+<style>
+  .field { margin: 18px 0; }
+  .field > label { display: block; font-size: 13px; font-weight: 600; color: var(--text-dim); margin-bottom: 7px; }
+  .field .hint { font-size: 12.8px; color: var(--text-faint); margin-top: 6px; }
+  input[type=text], input[type=password], select, textarea {
+    width: 100%; background: var(--ink-2); border: 1px solid var(--line); color: var(--text);
+    font-family: var(--f-body); font-size: 14.5px; padding: 10px 13px; border-radius: 9px;
+  }
+  input[type=password], input[type=text].key { font-family: var(--f-mono); font-size: 13px; }
+  textarea { font-family: var(--f-mono); font-size: 12.8px; line-height: 1.65; resize: vertical; min-height: 90px; }
+  textarea::placeholder { color: var(--text-faint); }
+  select { appearance: none; cursor: pointer; }
+  .inline { display: flex; gap: 9px; align-items: center; }
+  .inline > input, .inline > select { flex: 1; min-width: 0; }
+  .inline > .btn { white-space: nowrap; flex: none; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px; font-size: 13.2px; font-weight: 500;
+    text-decoration: none; color: var(--text-dim); background: var(--ink-2); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 14px; cursor: pointer; font-family: var(--f-body); transition: .15s;
+  }
+  .btn:hover { color: #fff; border-color: var(--text-faint); }
+  .btn-primary { color: var(--ink); background: var(--accent); border-color: transparent; font-weight: 600; }
+  .btn-primary:hover { color: var(--ink); filter: brightness(1.1); }
+  .saved { color: var(--ok); font-size: 13px; opacity: 0; transition: opacity .2s; }
+  .saved[data-on] { opacity: 1; }
+
+  /* Thẻ nhà cung cấp — hiện HẾT, không giấu ô nhập key sau dropdown nào */
+  .prov { border: 1px solid var(--line); border-radius: var(--r); padding: 18px 20px;
+          background: var(--panel); margin-bottom: 12px; transition: .16s; }
+  .prov.active { border-color: var(--accent); background: #171b24;
+                 box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent); }
+  .prov-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .prov-name { font-family: var(--f-display); font-weight: 700; font-size: 1.05rem; letter-spacing: -.02em; }
+  .prov-state { font-size: 11.5px; font-family: var(--f-mono); padding: 2px 9px; border-radius: 999px;
+                border: 1px solid var(--line); color: var(--text-faint); }
+  .prov-state.has { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
+  .prov-use { margin-left: auto; }
+  .prov.active .prov-use { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); cursor: default; }
+  .prov .field { margin: 12px 0 0; }
+
+  .free-note { font-size: 13px; color: var(--ok); background: color-mix(in srgb, var(--ok) 8%, var(--ink-2));
+               border: 1px solid color-mix(in srgb, var(--ok) 30%, transparent);
+               border-radius: 8px; padding: 10px 13px; margin: 12px 0 0; }
+
+  /* Kết quả dò từng model */
+  .probe-out { margin-top: 10px; display: grid; gap: 5px; }
+  .probe { display: flex; align-items: center; gap: 12px; padding: 7px 12px;
+           border: 1px solid var(--line); border-radius: 8px; background: var(--ink-2); font-size: 13px; }
+  .probe code { background: transparent; border: 0; padding: 0; flex: 1; color: var(--text-dim); }
+  .probe-st { font-family: var(--f-mono); font-size: 11.5px; color: var(--text-faint); white-space: nowrap; }
+  .probe.good { border-color: color-mix(in srgb, var(--ok) 50%, transparent); background: color-mix(in srgb, var(--ok) 8%, var(--ink-2)); }
+  .probe.good code { color: #fff; }
+  .probe.good .probe-st { color: var(--ok); }
+  .probe.good:hover { border-color: var(--ok); }
+  .probe.bad { opacity: .6; }
+  .probe.bad .probe-st { color: var(--danger); }
+  .probe.warnish .probe-st { color: var(--warn); }
+
+  .prompt-pair { display: grid; gap: 12px; }
+  .prompt-pair > div { min-width: 0; }
+  details.track-prompts { border-left: 3px solid var(--hue, var(--line)); }
+  details.mod-prompts { background: var(--ink); margin-left: 6px; }
+  .lvl { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-faint); }
+  @media (min-width: 900px) { .prompt-pair { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html"><span class="brand-dot"></span>Bản đồ học tập</a>
+    <nav>
+      <a href="index.html">← Về bản đồ</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap" style="max-width:900px">
+
+  <div class="hero" style="padding-bottom:20px">
+    <div class="eyebrow">Cấu hình</div>
+    <h1 style="font-size:clamp(2rem,4vw,2.8rem)">Nhà cung cấp AI<br>&amp; <em>prompt riêng</em></h1>
+    <p class="lede">Trang này là nơi duy nhất lưu dữ liệu lâu dài: API key, model, và prompt bạn tự viết. Bài đọc, câu hỏi và điểm số thì không lưu ở đâu cả.</p>
+  </div>
+
+  <div class="note">
+    <b>Key của bạn nằm ở đâu</b>
+    <p>Key lưu trong <code>localStorage</code> của <b>trình duyệt này</b> và gửi <b>thẳng</b> từ máy bạn tới nhà cung cấp — không đi qua máy chủ nào khác, không ai trong nhóm thấy key của bạn. Mỗi người dùng key riêng, nên chất lượng câu hỏi phụ thuộc vào model mà chính bạn chọn bên dưới.</p>
+  </div>
+
+  <details style="margin-top:12px">
+    <summary>Vài điều nên biết nếu dùng chung máy hoặc chia sẻ trang cho nhóm</summary>
+    <ul>
+      <li><b>Máy dùng chung:</b> key nằm trong trình duyệt, ai mở trang trên máy đó cũng dùng được hạn mức của bạn. Bấm <b>Xoá toàn bộ cấu hình</b> ở cuối trang khi dùng xong.</li>
+      <li><b>Đưa lên hosting cho nhóm:</b> an toàn, vì trang không nhúng sẵn key nào. Chỉ dùng <b>HTTPS</b> (GitHub Pages, Netlify, Cloudflare Pages đều mặc định có) — trang HTTP có thể bị chèn mã đánh cắp key.</li>
+      <li><b>Đừng commit key lên Git.</b> Key không nằm trong file nào cả, nhưng đừng dán nó vào code rồi commit.</li>
+      <li><b>Nghi ngờ lộ key:</b> thu hồi ngay trên trang quản lý của nhà cung cấp. Thu hồi rẻ hơn nhiều so với một hoá đơn bất ngờ.</li>
+    </ul>
+  </details>
+
+  <section style="margin-top:26px">
+    <h3 style="font-size:1.15rem;margin-bottom:4px">Nhà cung cấp</h3>
+    <p class="small muted" style="margin-bottom:14px">
+      Nhập key cho nhà cung cấp nào bạn có, rồi bấm <b>Dùng cái này</b>. Lưu được nhiều key cùng lúc và đổi qua lại tuỳ ý.
+    </p>
+
+    <div id="provider-panels"></div>
+
+    <div class="row" style="margin-top:18px">
+      <button class="btn btn-primary" id="test-btn" type="button">Gửi thử một yêu cầu</button>
+      <span class="saved" id="test-status"></span>
+    </div>
+    <div id="test-out"></div>
+  </section>
+
+  <section style="margin-top:34px">
+    <h3 style="font-size:1.15rem;margin-bottom:4px">Prompt tuỳ biến</h3>
+    <p class="small muted" style="margin-bottom:6px">
+      Các tầng <b>cộng dồn</b> chứ không thay thế nhau: gốc → mảng → module. Ô để trống thì kế thừa tầng trên,
+      nên bạn chỉ cần viết vào ô nào thấy nội dung chưa đúng ý.
+    </p>
+    <div class="row" style="margin-bottom:8px">
+      <button class="btn" id="reset-prompts" type="button">Khôi phục toàn bộ prompt mặc định</button>
+      <span class="saved" id="prompt-status"></span>
+    </div>
+
+    <div id="prompt-global"></div>
+    <div id="prompt-tracks"></div>
+  </section>
+
+  <footer>
+    <div class="row" style="justify-content:space-between">
+      <span>Cấu hình lưu tại <code>localStorage</code> của trình duyệt này.</span>
+      <button class="btn" id="reset-all" type="button">Xoá toàn bộ cấu hình</button>
+    </div>
+  </footer>
+
+</main>
+
+<script src="assets/curriculum/_manifest.js"></script>
+<script src="assets/ai/config.js"></script>
+<script src="assets/ai/prompts.js"></script>
+<script src="assets/ai/provider.js"></script>
+<script src="assets/hoc.js"></script>
+<script src="assets/settings.js"></script>
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đang tải… — Bản đồ học tập</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%230d1016%22%2F%3E%3Cpath%20d%3D%22M7%2025%20L13%2025%20A6%206%200%200%200%2019%2019%20L19%2015%22%20fill%3D%22none%22%20stroke%3D%22%2366738a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2219%22%20cy%3D%229%22%20r%3D%224.5%22%20fill%3D%22%23f0724f%22%2F%3E%3C%2Fsvg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/hoc.css">
+<style>
+  .crumb { font-family: var(--f-mono); font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase;
+           color: var(--text-faint); display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-bottom: 18px; }
+  .crumb a { color: var(--hue, var(--accent)); text-decoration: none; }
+  .crumb a:hover { text-decoration: underline; }
+  .crumb .dot { color: var(--line); }
+
+  .topic-h1 { font-size: clamp(1.9rem, 4.4vw, 3rem); font-weight: 800; letter-spacing: -.04em; }
+
+  .topic-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 22px; }
+  .btn { display: inline-flex; align-items: center; gap: 7px; font-size: 13.2px; font-weight: 500;
+         text-decoration: none; color: var(--text-dim); background: var(--ink-2); border: 1px solid var(--line);
+         border-radius: 8px; padding: 8px 14px; cursor: pointer; font-family: var(--f-body); transition: .15s; }
+  .btn:hover { color: #fff; border-color: var(--text-faint); }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn-primary { color: var(--ink); background: var(--hue, var(--accent)); border-color: transparent; font-weight: 600; }
+  .btn-primary:hover { color: var(--ink); filter: brightness(1.08); }
+  .btn-ghost { background: transparent; }
+
+  .done-toggle { display: inline-flex; align-items: center; gap: 9px; font-size: 13.2px;
+                 color: var(--text-dim); border: 1px solid var(--line); border-radius: 8px;
+                 padding: 7px 14px; cursor: pointer; background: var(--ink-2); }
+  .done-toggle input { appearance: none; width: 15px; height: 15px; border: 1.5px solid var(--line);
+                       border-radius: 4px; background: var(--ink); position: relative; cursor: pointer; }
+  .done-toggle input:checked { background: var(--hue, var(--accent)); border-color: var(--hue, var(--accent)); }
+  .done-toggle input:checked::after { content: ""; position: absolute; left: 4px; top: .5px; width: 4px; height: 8px;
+                                      border: solid var(--ink); border-width: 0 2px 2px 0; transform: rotate(43deg); }
+  .done-toggle:has(input:checked) { color: var(--hue, var(--accent)); border-color: color-mix(in srgb, var(--hue, var(--accent)) 45%, transparent); }
+
+  /* Cho biết nội dung đang được sinh bằng model nào — trong nhóm mỗi người
+     dùng key và model khác nhau nên chất lượng khác nhau. */
+  .model-chip { margin-left: auto; font-family: var(--f-mono); font-size: 11.5px;
+                color: var(--text-faint); text-decoration: none; border: 1px solid var(--line);
+                border-radius: 999px; padding: 5px 12px; white-space: nowrap; }
+  .model-chip:hover { color: var(--text); border-color: var(--text-faint); }
+  @media (max-width: 640px) { .model-chip { margin-left: 0; } }
+
+  /* ---- Chọn độ sâu ---- */
+  .depth { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .depth-btn { font-family: var(--f-body); font-size: 12.8px; padding: 8px 13px; cursor: pointer;
+               background: var(--ink-2); color: var(--text-dim); border: 0;
+               border-right: 1px solid var(--line); transition: .14s; }
+  .depth-btn:last-child { border-right: 0; }
+  .depth-btn:hover { color: #fff; }
+  .depth-btn[aria-pressed="true"] { background: var(--hue, var(--accent)); color: var(--ink); font-weight: 600; }
+
+  .read-time { font-family: var(--f-mono); font-size: 12px; color: var(--text-faint); margin: 14px 0 0; }
+
+  /* Nguồn nội dung — soạn sẵn hay AI sinh, người đọc phải biết */
+  .source-mark { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+                 font-size: 13.4px; border-radius: 10px; padding: 12px 16px; margin: 22px 0 0;
+                 border: 1px solid var(--line); background: var(--ink-2); }
+  .source-mark b { font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase;
+                   font-family: var(--f-mono); font-weight: 400; white-space: nowrap; }
+  .source-mark span { color: var(--text-dim); flex: 1; min-width: 220px; }
+  .source-mark.soan-san { border-color: color-mix(in srgb, var(--ok) 40%, transparent);
+                          background: color-mix(in srgb, var(--ok) 7%, var(--ink-2)); }
+  .source-mark.soan-san b { color: var(--ok); }
+  .source-mark.ai { border-color: color-mix(in srgb, var(--warn) 35%, transparent);
+                    background: color-mix(in srgb, var(--warn) 6%, var(--ink-2)); }
+  .source-mark.ai b { color: var(--warn); }
+
+  /* ---- Mục lục bài đọc ---- */
+  .lesson-toc { display: flex; flex-wrap: wrap; gap: 7px; margin: 26px 0 0;
+                padding-bottom: 22px; border-bottom: 1px solid var(--line-soft); }
+  .lesson-toc a { font-size: 12.6px; color: var(--text-dim); text-decoration: none;
+                  border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; transition: .14s; }
+  .lesson-toc a:hover { color: var(--ink); background: var(--hue, var(--accent)); border-color: transparent; }
+
+  /* ---- Bài đọc ---- */
+  .sec { margin: 34px 0; scroll-margin-top: 80px; }
+  .sec > h3 { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--hue, var(--accent));
+              font-family: var(--f-mono); font-weight: 400; margin-bottom: 12px;
+              display: flex; align-items: center; gap: 12px; }
+  .sec > h3::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
+  .sec-body > p:first-child { margin-top: 0; }
+  .lead-def { font-size: 17px; line-height: 1.68; color: var(--text); }
+
+  /* Tiêu đề phụ bên trong một mục bài đọc */
+  .md-h { font-size: 1.06rem; font-weight: 700; letter-spacing: -.02em; color: #fff;
+          margin: 30px 0 10px; padding-left: 13px; border-left: 3px solid var(--hue, var(--accent)); }
+  .sec-body > .md-h:first-child { margin-top: 0; }
+  .sec-body table { font-size: 13.6px; }
+
+  /* Ba mục có vai trò khác nhau nên trông cũng phải khác nhau */
+  .sec-highlight { background: var(--panel); border: 1px solid var(--line);
+                   border-left: 3px solid var(--hue, var(--accent));
+                   border-radius: var(--r); padding: 20px 24px; margin-top: 26px; }
+  .sec-highlight > h3 { margin-top: 0; }
+  .sec-highlight li { font-size: 15px; }
+
+  .sec-pre .sec-body { font-size: 14.3px; color: var(--text-dim); }
+  .sec-warnish li::marker { color: var(--warn); }
+  .sec-check .sec-body { border-left: 2px solid var(--line); padding-left: 18px; }
+  .sec-check li { color: var(--text); font-style: italic; }
+
+  /* ---- Trạng thái tải ---- */
+  .loading { display: flex; align-items: center; gap: 12px; color: var(--text-dim); font-size: 14.5px; padding: 30px 0; }
+  .spin { width: 15px; height: 15px; border: 2px solid var(--line); border-top-color: var(--hue, var(--accent));
+          border-radius: 50%; animation: sp .7s linear infinite; flex: none; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+
+  .skel { height: 13px; background: linear-gradient(90deg, #161c26, #1d2531, #161c26);
+          background-size: 200% 100%; border-radius: 5px; margin: 9px 0; animation: sk 1.4s ease infinite; }
+  @keyframes sk { to { background-position: -200% 0; } }
+
+  /* ---- Quiz ---- */
+  .score { position: sticky; top: 62px; z-index: 20; display: flex; align-items: center; gap: 16px;
+           background: color-mix(in srgb, var(--ink) 92%, transparent); backdrop-filter: blur(12px);
+           border: 1px solid var(--line); border-radius: 12px; padding: 12px 18px; margin-bottom: 20px; }
+  .score-pct { font-family: var(--f-display); font-size: 1.7rem; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+  .score-sub { font-size: 12.6px; color: var(--text-faint); font-family: var(--f-mono); }
+  .score .bar { flex: 1; min-width: 60px; }
+
+  .qlist { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+  .q { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 20px 22px; }
+  .q.correct { border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
+  .q.wrong   { border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
+  .q-num { font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-faint); }
+  .q-body { margin: 8px 0 16px; font-size: 15.2px; }
+  .q-body p:last-child { margin-bottom: 0; }
+
+  .opts { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .opt { width: 100%; text-align: left; display: flex; gap: 12px; align-items: flex-start;
+         background: var(--ink-2); border: 1px solid var(--line); border-radius: 9px;
+         padding: 11px 14px; cursor: pointer; font-family: var(--f-body); font-size: 14.3px;
+         color: var(--text); transition: .14s; }
+  .opt:hover:not(:disabled) { border-color: var(--hue, var(--accent)); background: #171e28; }
+  .opt:disabled { cursor: default; }
+  .opt .letter { font-family: var(--f-mono); font-size: 12px; color: var(--text-faint); flex: none;
+                 width: 20px; height: 20px; line-height: 19px; text-align: center;
+                 border: 1px solid var(--line); border-radius: 5px; margin-top: 1px; }
+  .opt.is-correct { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 10%, var(--ink-2)); }
+  .opt.is-correct .letter { border-color: var(--ok); color: var(--ok); }
+  .opt.is-chosen-wrong { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, var(--ink-2)); }
+  .opt.is-chosen-wrong .letter { border-color: var(--danger); color: var(--danger); }
+  .opt.dimmed { opacity: .45; }
+
+  .explain { margin-top: 14px; padding: 13px 16px; border-radius: 9px; background: var(--ink-2);
+             border-left: 3px solid var(--hue, var(--accent)); font-size: 14.2px; }
+  .explain .lbl { font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+                  color: var(--text-faint); font-family: var(--f-mono); display: block; margin-bottom: 5px; }
+  .explain p:last-child { margin-bottom: 0; }
+
+  .quiz-foot { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; align-items: center; }
+
+  .nav-topic { display: flex; gap: 10px; justify-content: space-between; margin-top: 50px;
+               padding-top: 24px; border-top: 1px solid var(--line-soft); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html"><span class="brand-dot"></span>Bản đồ học tập</a>
+    <nav>
+      <a href="index.html">← Bản đồ</a>
+      <a href="cai-dat.html">Cài đặt</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap" style="max-width:880px">
+
+  <div class="hero" style="padding:52px 0 10px">
+    <div class="crumb" id="crumb"></div>
+    <h1 class="topic-h1" id="topic-title">Đang tải…</h1>
+    <div class="topic-bar" id="topic-bar" hidden>
+      <label class="done-toggle">
+        <input type="checkbox" id="done-box">
+        <span>Đã học xong</span>
+      </label>
+      <div class="depth" role="group" aria-label="Độ sâu bài đọc">
+        <button class="depth-btn" data-d="ngan" type="button">Ngắn</button>
+        <button class="depth-btn" data-d="vua" type="button">Vừa</button>
+        <button class="depth-btn" data-d="sau" type="button">Chuyên sâu</button>
+      </div>
+      <button class="btn" id="regen" type="button">Sinh lại</button>
+      <button class="btn btn-ghost" id="dl-lesson" type="button">Tải .md</button>
+      <a class="model-chip" id="model-chip" href="cai-dat.html" title="Đổi nhà cung cấp hoặc model"></a>
+    </div>
+    <p class="read-time" id="read-time" hidden></p>
+  </div>
+
+  <div id="alert"></div>
+
+  <p class="source-mark" id="source-mark" hidden></p>
+
+  <nav class="lesson-toc" id="lesson-toc" hidden></nav>
+
+  <section id="lesson"></section>
+
+  <section id="quiz" style="margin-top:52px" hidden>
+    <h2 style="font-size:1.5rem;font-weight:800;letter-spacing:-.03em;margin-bottom:6px">Bài tập</h2>
+    <p class="muted small" id="quiz-intro">Mỗi câu chấm ngay khi bạn chọn, kèm giải thích. Làm hết có thể xin thêm.</p>
+
+    <!-- Số câu mỗi lượt: thời gian chờ tỉ lệ thẳng với số câu, nên đây là
+         núm vặn hiệu năng trực tiếp nhất cho người dùng. Dùng lại đúng
+         class .depth của bộ chọn độ sâu để khỏi thêm CSS mới. -->
+    <div class="row" style="margin-top:14px;align-items:center;gap:10px">
+      <span class="small muted">Số câu mỗi lượt</span>
+      <div class="depth" role="group" aria-label="Số câu mỗi lượt">
+        <button class="depth-btn" data-n="5" type="button">5</button>
+        <button class="depth-btn" data-n="10" type="button">10</button>
+        <button class="depth-btn" data-n="20" type="button">20</button>
+      </div>
+      <span class="small muted" id="socau-note"></span>
+    </div>
+    <!-- Thông báo của phần bài tập phải nằm NGAY ĐÂY, không dùng chung #alert
+         ở đầu trang: bài đọc dài tới ~15.000px, báo lỗi trên đó thì người
+         bấm nút ở dưới này không bao giờ nhìn thấy. -->
+    <div id="quiz-alert"></div>
+    <div id="quiz-start" style="margin-top:16px">
+      <button class="btn btn-primary" id="start-quiz" type="button">Làm bài tập</button>
+    </div>
+    <div id="quiz-area" hidden>
+      <div class="score" id="score" hidden>
+        <div>
+          <div class="score-pct" id="score-pct">—</div>
+          <div class="score-sub" id="score-sub">chưa trả lời câu nào</div>
+        </div>
+        <div class="bar"><i id="score-bar"></i></div>
+      </div>
+      <ul class="qlist" id="qlist"></ul>
+      <div class="quiz-foot" id="quiz-foot" hidden>
+        <button class="btn btn-primary" id="more-q" type="button">Thêm 10 câu</button>
+        <button class="btn btn-ghost" id="dl-quiz" type="button">Tải bộ câu hỏi .md</button>
+        <span class="small muted" id="dup-warn"></span>
+      </div>
+    </div>
+  </section>
+
+  <nav class="nav-topic">
+    <a class="btn" id="prev-topic" href="#" hidden>← Chủ đề trước</a>
+    <a class="btn" id="next-topic" href="#" hidden>Chủ đề sau →</a>
+  </nav>
+
+  <footer>
+    <p style="margin:0">Nội dung trên trang này do AI sinh ra và <b>có thể sai</b>. Gặp chỗ đáng ngờ thì đối chiếu với roadmap <code>.md</code> của mảng, hoặc bấm “Sinh lại”.</p>
+  </footer>
+
+</main>
+
+<script src="assets/curriculum/_manifest.js"></script>
+<script src="assets/lessons/_manifest.js"></script>
+<script src="assets/md.js"></script>
+<script src="assets/ai/config.js"></script>
+<script src="assets/ai/prompts.js"></script>
+<script src="assets/ai/provider.js"></script>
+<script src="assets/hoc.js"></script>
+<script src="assets/lesson.js"></script>
+</body>
+</html>

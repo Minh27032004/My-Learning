@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bản đồ học tập — Software Engineering & AI/ML</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%230d1016%22%2F%3E%3Cpath%20d%3D%22M7%2025%20L13%2025%20A6%206%200%200%200%2019%2019%20L19%2015%22%20fill%3D%22none%22%20stroke%3D%22%2366738a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2219%22%20cy%3D%229%22%20r%3D%224.5%22%20fill%3D%22%23f0724f%22%2F%3E%3C%2Fsvg%3E">
+<meta name="description" content="Toàn bộ công nghệ, thuật toán và kỹ năng cần học, xếp theo thứ tự ưu tiên, có đánh dấu tiến độ.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/hoc.css">
+<style>
+  /* ---- Bảng điều khiển tiến độ ---- */
+  .dash { display: grid; grid-template-columns: 1.1fr 1fr; gap: 14px; margin: 34px 0 10px; }
+  .dash > div { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 20px 22px; }
+  .dash h3 { font-size: 11.5px; letter-spacing: .15em; text-transform: uppercase; color: var(--text-faint); font-family: var(--f-mono); font-weight: 400; margin-bottom: 12px; }
+  #global-pct-big { font-family: var(--f-display); font-size: 2.6rem; font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+  .dash .bar { margin: 14px 0 8px; height: 6px; }
+  #global-bar { background: linear-gradient(90deg, var(--b01), var(--b03), var(--b05), var(--b07)); }
+
+  .next-item { font-family: var(--f-display); font-size: 1.22rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.35; color: #fff; }
+  .next-ctx { font-size: 12.8px; color: var(--text-faint); margin-top: 8px; font-family: var(--f-mono); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 13.2px; font-weight: 500; text-decoration: none;
+    color: var(--text-dim); background: var(--ink-2); border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 13px; cursor: pointer; font-family: var(--f-body);
+    transition: .15s;
+  }
+  .btn:hover { color: #fff; border-color: var(--text-faint); }
+  .btn-primary { color: var(--ink); background: var(--hue, var(--accent)); border-color: transparent; font-weight: 600; }
+  .btn-primary:hover { color: var(--ink); filter: brightness(1.1); }
+
+  /* ---- Đầu mỗi mảng ---- */
+  .track-line { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .track-id { font-family: var(--f-mono); font-size: 12px; color: var(--hue, var(--accent)); border: 1px solid color-mix(in srgb, var(--hue, var(--accent)) 40%, transparent); border-radius: 6px; padding: 1px 7px; }
+  .track-head h2 { font-size: clamp(1.5rem, 3vw, 2.05rem); font-weight: 800; letter-spacing: -.04em; }
+  .track-tag { font-size: 12.5px; color: var(--text-faint); }
+  .track-why { color: var(--text-dim); font-size: 14.6px; max-width: 70ch; margin: 12px 0 16px; }
+  .track-links { display: flex; gap: 9px; flex-wrap: wrap; margin-bottom: 18px; }
+  .track-prog { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .track-prog .bar { flex: 1; }
+
+  .mod-name { flex: 1; }
+  .mod-count { font-family: var(--f-mono); font-size: 11.5px; color: var(--text-faint); font-weight: 400; }
+
+  /* ---- Khối "cách dùng" ---- */
+  .howto { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin: 26px 0 10px; }
+  .howto div { border: 1px solid var(--line); border-radius: var(--r-sm); padding: 15px 17px; background: var(--ink-2); }
+  .howto h4 { font-size: 14px; margin-bottom: 5px; }
+  .howto p { font-size: 13.4px; color: var(--text-dim); margin: 0; }
+
+  .order-note { border: 1px dashed var(--line); border-radius: var(--r); padding: 20px 22px; margin: 30px 0 10px; background: var(--ink-2); }
+
+  @media (max-width: 780px) { .dash { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html"><span class="brand-dot"></span>Bản đồ học tập</a>
+    <!-- Sinh từ dữ liệu trong assets/curriculum/ — thêm mảng mới là tự có link -->
+    <nav id="track-nav"></nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="hero">
+    <div class="eyebrow">Software Engineer → AI/ML Engineer</div>
+    <h1>Mọi thứ cần học,<br>xếp theo <em>thứ tự nên học</em></h1>
+    <p class="lede">
+      <span id="total-items">…</span> chủ đề, chia thành <span id="total-tracks">…</span> mảng, đi từ cách máy tính chạy một dòng lệnh
+      đến cách phục vụ một model AI cho hàng nghìn người dùng.
+      Bấm <b>ô vuông</b> để đánh dấu đã học, bấm <b>tên chủ đề</b> để mở tài liệu và làm quiz.
+    </p>
+  </div>
+
+  <!-- Hiện cho người mở trang lần đầu, chưa có key -->
+  <div id="first-run" hidden></div>
+
+  <p id="storage-warn" class="warn" hidden><b>Lưu ý</b>Trình duyệt đang chặn bộ nhớ cục bộ, nên tiến độ sẽ mất khi bạn đóng tab. Thử mở trang bằng Chrome, hoặc chạy một server tĩnh: <code>python -m http.server</code> rồi vào <code>localhost:8000</code>.</p>
+
+  <!-- ===== Bảng điều khiển ===== -->
+  <section class="dash">
+    <div>
+      <h3>Tiến độ toàn lộ trình</h3>
+      <div id="global-pct-big">0%</div>
+      <div class="bar"><i id="global-bar"></i></div>
+      <div class="row" style="justify-content:space-between">
+        <span class="pct" id="global-pct">0 / 0 mục</span>
+        <button class="btn" id="reset-progress" type="button">Xoá tiến độ</button>
+      </div>
+    </div>
+    <div>
+      <h3>Học gì tiếp theo</h3>
+      <p class="next-item" id="next-item">Đang tải…</p>
+      <p class="next-ctx" id="next-context"></p>
+      <p style="margin:14px 0 0"><a class="btn" id="next-link" href="#mang-01">Tới mảng đó →</a></p>
+    </div>
+  </section>
+
+  <!-- ===== Cách dùng ===== -->
+  <div class="howto">
+    <div>
+      <h4>Tick khi đã <i>làm được</i></h4>
+      <p>Không phải khi đã đọc xong. Tiêu chuẩn: giải thích lại được cho người khác, hoặc viết được code chạy đúng mà không copy.</p>
+    </div>
+    <div>
+      <h4>Đi theo số thứ tự</h4>
+      <p>01 → 02 → 03 → 04 → 05 → 07, và 06 học sau cùng. Mảng 03 (Git) học song song ngay từ đầu.</p>
+    </div>
+    <div>
+      <h4>Mỗi mảng có roadmap riêng</h4>
+      <p>Trang này là bản đồ tổng. Bấm "Roadmap đầy đủ" trong mỗi mảng để đọc phần lý thuyết, bài tập và project.</p>
+    </div>
+    <div>
+      <h4>Tiến độ lưu tại máy</h4>
+      <p>Dữ liệu nằm trong <code>localStorage</code> của trình duyệt này. Đổi máy hay xoá dữ liệu duyệt web là mất, và <code>file://</code> với <code>http://</code> là hai kho lưu trữ khác nhau.</p>
+    </div>
+  </div>
+
+  <div class="order-note">
+    <p style="margin:0 0 8px"><strong>Vì sao thứ tự này, và một phản biện đáng cân nhắc</strong></p>
+    <p class="small muted" style="margin:0">
+      Lộ trình xây nền kỹ thuật phần mềm trước, AI sau. Lý do: một model trong notebook chưa phải sản phẩm — thứ biến nó thành sản phẩm là API, database, và hệ thống chịu tải.
+      <b>Nhưng đừng học tuyến tính đến mức cực đoan.</b> Học hết 100% mảng 01 và 02 rồi mới đụng tới AI là công thức khiến người ta bỏ cuộc ở tháng thứ tư. Cách thực tế hơn:
+      đi sâu mảng 01–03 cho tới khi tự tin, rồi <b>vừa học 04–05 vừa làm một project AI nhỏ</b> để giữ động lực. Động lực là tài nguyên khan hiếm hơn thời gian.
+    </p>
+  </div>
+
+  <!-- ===== Bản đồ 7 mảng ===== -->
+  <div class="graph" id="tracks"></div>
+
+  <footer>
+    <div class="row" style="justify-content:space-between; align-items:flex-start">
+      <div>
+        <p style="margin:0">Mỗi mảng là một file trong <code>assets/curriculum/</code>. Thêm công nghệ mới: xem <a href="https://github.com/Minh27032004/My-Learning/blob/main/docs/them-cong-nghe-moi.md">hướng dẫn</a>.</p>
+      </div>
+      <a class="mono small" href="03-Git-GitHub/git.html">Sổ tay Git →</a>
+    </div>
+  </footer>
+
+</main>
+
+<script src="assets/curriculum/_manifest.js"></script>
+<script src="assets/lessons/_manifest.js"></script>
+<script src="assets/ai/config.js"></script>
+<script src="assets/render.js"></script>
+<script src="assets/hoc.js"></script>
+<script>
+  /* Con số % lớn trên bảng điều khiển: đọc lại từ thanh tiến độ tổng */
+  (function () {
+    var big = document.getElementById("global-pct-big");
+    var bar = document.getElementById("global-bar");
+    if (!big || !bar) return;
+    function sync() { big.textContent = (bar.style.width || "0%").replace(/\..*%/, "%"); }
+    document.addEventListener("DOMContentLoaded", function () { setTimeout(sync, 0); });
+    document.addEventListener("map:rendered", function () { setTimeout(sync, 0); });
+    document.addEventListener("change", function (e) {
+      if (e.target.matches("input[type=checkbox][data-k]")) setTimeout(sync, 0);
+    });
+    document.addEventListener("click", function (e) {
+      if (e.target.id === "reset-progress") setTimeout(sync, 30);
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,1140 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sổ tay Git — khi nào dùng lệnh nào</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%230d1016%22%2F%3E%3Cpath%20d%3D%22M7%2025%20L13%2025%20A6%206%200%200%200%2019%2019%20L19%2015%22%20fill%3D%22none%22%20stroke%3D%22%2366738a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2219%22%20cy%3D%229%22%20r%3D%224.5%22%20fill%3D%22%23f0724f%22%2F%3E%3C%2Fsvg%3E">
+<meta name="description" content="Hướng dẫn Git theo tình huống: mỗi lệnh trả lời 'khi nào dùng', 'gõ thế nào', 'cơ chế bên dưới' và 'bẫy thường gặp'.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/hoc.css">
+<style>
+  /* Layout riêng của trang này: rail điều hướng dính bên trái + nội dung */
+  .layout { display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 44px; align-items: start; }
+  .sidenav { position: sticky; top: 74px; max-height: calc(100vh - 96px); overflow-y: auto; padding: 8px 0 30px; }
+  .sidenav ol { list-style: none; margin: 0; padding: 0; position: relative; }
+  .sidenav ol::before { content: ""; position: absolute; left: 5px; top: 12px; bottom: 12px; width: 1px; background: var(--line); }
+  .sidenav a {
+    display: block; position: relative; padding: 5px 0 5px 22px;
+    font-size: 13.4px; color: var(--text-faint); text-decoration: none; line-height: 1.45;
+  }
+  .sidenav a::before {
+    content: ""; position: absolute; left: 1.5px; top: 12px; width: 8px; height: 8px;
+    border-radius: 50%; background: var(--ink); border: 1.5px solid var(--line); transition: .18s;
+  }
+  .sidenav a:hover { color: var(--text); }
+  .sidenav a[aria-current] { color: var(--accent); font-weight: 500; }
+  .sidenav a[aria-current]::before { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
+  .sidenav .sn-head { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-faint); margin: 0 0 12px 22px; }
+
+  .searchbar { display: flex; gap: 10px; align-items: center; margin: 26px 0 0; }
+  .searchbar input {
+    flex: 1; background: var(--panel); border: 1px solid var(--line); color: var(--text);
+    font-family: var(--f-body); font-size: 14.5px; padding: 11px 15px; border-radius: 10px;
+  }
+  .searchbar input::placeholder { color: var(--text-faint); }
+  .searchbar kbd {
+    font-family: var(--f-mono); font-size: 11px; color: var(--text-faint);
+    border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 2px 7px;
+  }
+
+  section { padding-top: 40px; }
+  section > h2 {
+    font-size: clamp(1.45rem, 2.6vw, 1.95rem); font-weight: 800; letter-spacing: -.035em;
+    display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px;
+  }
+  section > h2 .num {
+    font-family: var(--f-mono); font-size: 12px; font-weight: 400; color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); border-radius: 6px;
+    padding: 1px 7px; letter-spacing: 0;
+  }
+  section > .sub { color: var(--text-dim); font-size: 15px; margin: 0 0 10px; max-width: 68ch; }
+
+  .diagram { background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r); padding: 20px 18px; margin: 20px 0; }
+  .diagram svg { display: block; width: 100%; height: auto; }
+  .diagram figcaption { font-size: 13px; color: var(--text-faint); margin-top: 12px; text-align: center; }
+
+  .flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 18px 0; }
+  .flow > div { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 13px 15px; }
+  .flow h5 { font-family: var(--f-mono); font-size: 12.5px; color: #fff; margin: 0 0 5px; font-weight: 500; }
+  .flow p { font-size: 13.3px; color: var(--text-dim); margin: 0; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; gap: 0; }
+    .sidenav { position: static; max-height: none; border-bottom: 1px solid var(--line-soft); margin-bottom: 20px; }
+    .sidenav ol { display: flex; flex-wrap: wrap; gap: 4px; }
+    .sidenav ol::before { display: none; }
+    .sidenav a { padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px; font-size: 12.5px; }
+    .sidenav a::before { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="../index.html"><span class="brand-dot"></span>Bản đồ học tập</a>
+    <nav>
+      <a href="#mo-hinh">Mô hình</a>
+      <a href="#hang-ngay">Hằng ngày</a>
+      <a href="#undo">Hoàn tác</a>
+      <a href="#branch">Nhánh</a>
+      <a href="#tra-cuu">Tra cứu</a>
+      <a href="#sos">Cấp cứu</a>
+      <a href="README.md">Roadmap .md</a>
+      <a href="../cai-dat.html">Cài đặt</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="hero">
+    <div class="eyebrow">Mảng 03 · Git &amp; GitHub</div>
+    <h1>Sổ tay Git:<br><em>khi nào</em> dùng lệnh nào</h1>
+    <p class="lede">
+      Hầu hết tài liệu Git liệt kê lệnh theo bảng chữ cái. Trang này sắp theo <b>tình huống bạn thật sự gặp</b>.
+      Mỗi lệnh trả lời đúng bốn câu: dùng khi nào · gõ ra sao · bên dưới nó làm gì · và cái bẫy nằm ở đâu.
+    </p>
+    <div class="searchbar">
+      <input id="filter" type="search" placeholder="Lọc nhanh: gõ &quot;conflict&quot;, &quot;xoá nhánh&quot;, &quot;reset&quot;, &quot;stash&quot;…" aria-label="Lọc lệnh Git">
+      <kbd>/</kbd>
+    </div>
+    <p id="filter-empty" class="muted small" hidden style="margin-top:10px">Không có lệnh nào khớp. Thử từ khoá ngắn hơn.</p>
+  </div>
+
+  <div class="layout">
+
+    <aside class="sidenav" data-spy>
+      <p class="sn-head">Mục lục</p>
+      <ol>
+        <li><a href="#mo-hinh">Mô hình 3 khu vực</a></li>
+        <li><a href="#cai-dat">Cài đặt &amp; cấu hình</a></li>
+        <li><a href="#khoi-tao">Tạo &amp; clone repo</a></li>
+        <li><a href="#hang-ngay">Vòng lặp hằng ngày</a></li>
+        <li><a href="#lich-su">Đọc lịch sử &amp; so sánh</a></li>
+        <li><a href="#undo">Sửa sai &amp; hoàn tác</a></li>
+        <li><a href="#branch">Nhánh &amp; merge</a></li>
+        <li><a href="#conflict">Xử lý conflict</a></li>
+        <li><a href="#remote">Remote: push / pull</a></li>
+        <li><a href="#rebase">Rebase · cherry-pick · stash</a></li>
+        <li><a href="#github">GitHub &amp; Pull Request</a></li>
+        <li><a href="#nang-cao">Lệnh nâng cao</a></li>
+        <li><a href="#tra-cuu">Bảng tra cứu</a></li>
+        <li><a href="#sos">Cấp cứu</a></li>
+      </ol>
+    </aside>
+
+    <div>
+
+<!-- ============ 1. MÔ HÌNH ============ -->
+<section id="mo-hinh">
+  <h2><span class="num">01</span> Mô hình 3 khu vực</h2>
+  <p class="sub">Nếu chỉ nhớ được một thứ về Git, nhớ cái này. 90% sự bối rối với Git đến từ việc không biết file của mình đang nằm ở khu vực nào.</p>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 920 320" role="img" aria-label="Sơ đồ bốn khu vực của Git: thư mục làm việc, staging area, repo local, repo remote">
+      <defs>
+        <marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto">
+          <path d="M0,0 L8,3.2 L0,6.4 z" fill="#7fd6c4"/>
+        </marker>
+        <marker id="ar2" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto">
+          <path d="M0,0 L8,3.2 L0,6.4 z" fill="#e57bb0"/>
+        </marker>
+      </defs>
+
+      <!-- 4 hộp -->
+      <g font-family="Archivo, sans-serif">
+        <rect x="14"  y="118" width="192" height="84" rx="10" fill="#141922" stroke="#212a37"/>
+        <rect x="248" y="118" width="192" height="84" rx="10" fill="#141922" stroke="#212a37"/>
+        <rect x="482" y="118" width="192" height="84" rx="10" fill="#141922" stroke="#212a37"/>
+        <rect x="716" y="118" width="192" height="84" rx="10" fill="#10141c" stroke="#212a37" stroke-dasharray="5 4"/>
+
+        <text x="110" y="150" text-anchor="middle" fill="#dde4ef" font-size="15" font-weight="700">Working Directory</text>
+        <text x="110" y="174" text-anchor="middle" fill="#66738a" font-size="12.5">File bạn đang sửa</text>
+
+        <text x="344" y="150" text-anchor="middle" fill="#dde4ef" font-size="15" font-weight="700">Staging Area</text>
+        <text x="344" y="174" text-anchor="middle" fill="#66738a" font-size="12.5">Giỏ hàng chờ commit</text>
+
+        <text x="578" y="150" text-anchor="middle" fill="#dde4ef" font-size="15" font-weight="700">Local Repository</text>
+        <text x="578" y="174" text-anchor="middle" fill="#66738a" font-size="12.5">.git — lịch sử trên máy</text>
+
+        <text x="812" y="150" text-anchor="middle" fill="#dde4ef" font-size="15" font-weight="700">Remote (GitHub)</text>
+        <text x="812" y="174" text-anchor="middle" fill="#66738a" font-size="12.5">Bản trên mây</text>
+      </g>
+
+      <!-- mũi tên đi tới -->
+      <g stroke="#7fd6c4" stroke-width="1.6" fill="none" marker-end="url(#ar)">
+        <path d="M206,146 L242,146"/>
+        <path d="M440,146 L476,146"/>
+        <path d="M674,146 L710,146"/>
+      </g>
+      <g font-family="JetBrains Mono, monospace" font-size="12" fill="#7fd6c4" text-anchor="middle">
+        <text x="224" y="132">add</text>
+        <text x="458" y="132">commit</text>
+        <text x="692" y="132">push</text>
+      </g>
+
+      <!-- mũi tên quay lại -->
+      <g stroke="#e57bb0" stroke-width="1.4" fill="none" marker-end="url(#ar2)" stroke-dasharray="4 4">
+        <path d="M242,190 L210,190"/>
+        <path d="M476,190 L444,190"/>
+        <path d="M710,190 L678,190"/>
+      </g>
+      <g font-family="JetBrains Mono, monospace" font-size="11.5" fill="#e57bb0" text-anchor="middle">
+        <text x="226" y="212">restore --staged</text>
+        <text x="460" y="212">reset</text>
+        <text x="694" y="212">fetch / pull</text>
+      </g>
+
+      <!-- nhãn trên/dưới -->
+      <text x="14" y="46" font-family="JetBrains Mono, monospace" font-size="11.5" fill="#66738a" letter-spacing="1.5">MÁY CỦA BẠN — CHẠY ĐƯỢC OFFLINE</text>
+      <line x1="14" y1="58" x2="674" y2="58" stroke="#212a37" stroke-width="1"/>
+      <line x1="14" y1="58" x2="14" y2="70" stroke="#212a37"/>
+      <line x1="674" y1="58" x2="674" y2="70" stroke="#212a37"/>
+
+      <text x="716" y="46" font-family="JetBrains Mono, monospace" font-size="11.5" fill="#66738a" letter-spacing="1.5">CẦN MẠNG</text>
+      <line x1="716" y1="58" x2="908" y2="58" stroke="#212a37"/>
+      <line x1="716" y1="58" x2="716" y2="70" stroke="#212a37"/>
+      <line x1="908" y1="58" x2="908" y2="70" stroke="#212a37"/>
+
+      <text x="461" y="290" text-anchor="middle" font-family="Be Vietnam Pro, sans-serif" font-size="13" fill="#97a3b6">
+        Mũi tên liền = đẩy thay đổi đi tới · Mũi tên đứt = kéo ngược lại (hoàn tác)
+      </text>
+    </svg>
+    <figcaption>Bốn khu vực. Chỉ bước cuối cùng mới cần internet — đó là lý do Git được gọi là "phân tán".</figcaption>
+  </figure>
+
+  <div class="flow">
+    <div><h5>Working Directory</h5><p>Thư mục thật trên ổ đĩa. Sửa file ở đây, Git thấy nhưng chưa ghi nhận gì.</p></div>
+    <div><h5>Staging Area (Index)</h5><p>Vùng đệm bạn tự chọn "cái nào vào commit tới". Đây là thứ Git có mà SVN/Dropbox không có.</p></div>
+    <div><h5>Local Repository</h5><p>Thư mục ẩn <code>.git</code>. Chứa <b>toàn bộ</b> lịch sử — xem log, tạo nhánh đều offline.</p></div>
+    <div><h5>Remote</h5><p>GitHub/GitLab. Chỉ là một bản sao repo đặt trên server, không "thông minh" hơn máy bạn.</p></div>
+  </div>
+
+  <div class="note">
+    <b>Vì sao có Staging Area?</b>
+    <p>Nó cho phép bạn <b>tách một mớ sửa đổi lộn xộn thành nhiều commit sạch</b>. Ví dụ bạn vừa sửa bug vừa lỡ tay format lại code: <code>git add file-bug.py</code> rồi commit "fix bug", sau đó <code>git add .</code> commit "format". Lịch sử đọc được, revert được từng phần. Ai bỏ qua staging và luôn <code>git add .</code> là đang vứt bỏ tính năng đắt giá nhất của Git.</p>
+  </div>
+
+  <p><strong>Bốn trạng thái của một file</strong> — <code>git status</code> luôn nói bạn đang ở đâu:</p>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Trạng thái</th><th>Nghĩa là</th><th>Git nói gì</th></tr></thead>
+      <tbody>
+        <tr><td><code>untracked</code></td><td>File mới, Git chưa từng biết đến</td><td>Untracked files</td></tr>
+        <tr><td><code>modified</code></td><td>Đã sửa so với commit gần nhất, chưa add</td><td>Changes not staged for commit</td></tr>
+        <tr><td><code>staged</code></td><td>Đã add, đang chờ commit</td><td>Changes to be committed</td></tr>
+        <tr><td><code>committed</code></td><td>Đã ghi vào lịch sử, an toàn</td><td>nothing to commit, working tree clean</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 2. CÀI ĐẶT ============ -->
+<section id="cai-dat">
+  <h2><span class="num">02</span> Cài đặt &amp; cấu hình</h2>
+  <p class="sub">Làm một lần cho cả sự nghiệp. Nhưng làm sai email thì mọi commit của bạn không được tính vào GitHub profile.</p>
+
+  <div class="cmd" data-searchable>
+    <h4>git --version <span class="tag">kiểm tra</span></h4>
+    <p class="when"><b>Khi nào:</b> ngay sau khi cài, để chắc terminal thấy được git.</p>
+    <div class="code" data-lang="bash"><pre><code><b>git</b> --version
+<i># git version 2.45.0  → OK</i>
+<i># Windows: tải tại https://git-scm.com (nhớ chọn cài kèm Git Bash)</i>
+<i># macOS:   brew install git</i>
+<i># Ubuntu:  sudo apt install git</i></code></pre></div>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>git config --global <span class="tag">bắt buộc, một lần</span></h4>
+    <p class="when"><b>Khi nào:</b> ngay sau khi cài Git, trước commit đầu tiên.</p>
+    <div class="code" data-lang="bash"><pre><code><i># Tên &amp; email — ký vào MỌI commit của bạn</i>
+<b>git</b> config --global user.name <u>"Tran Nhat Minh"</u>
+<b>git</b> config --global user.email <u>"nhutminhtran761@gmail.com"</u>
+
+<i># Editor mặc định khi Git cần bạn gõ text dài</i>
+<b>git</b> config --global core.editor <u>"code --wait"</u>
+
+<i># Nhánh mặc định tên 'main' (chuẩn hiện đại thay cho 'master')</i>
+<b>git</b> config --global init.defaultBranch <u>main</u>
+
+<i># Khi 'git pull' mà lịch sử phân kỳ: mặc định merge (an toàn cho người mới)</i>
+<b>git</b> config --global pull.rebase <u>false</u>
+
+<i># Windows: chuẩn hoá xuống dòng CRLF ↔ LF, tránh diff "cả file đổi"</i>
+<b>git</b> config --global core.autocrlf <u>true</u>
+
+<i># Xem lại tất cả</i>
+<b>git</b> config --list --show-origin</code></pre></div>
+    <div class="note">
+      <b>Cơ chế</b>
+      <p>Git đọc config theo 3 tầng, tầng sau đè tầng trước: <code>--system</code> (cả máy) → <code>--global</code> (<code>~/.gitconfig</code>) → <code>--local</code> (<code>.git/config</code> của riêng repo). Vì vậy trong một repo của công ty, bạn có thể <code>git config user.email "..."</code> (không có <code>--global</code>) để dùng email khác mà không ảnh hưởng repo cá nhân.</p>
+    </div>
+    <div class="warn">
+      <b>Bẫy</b>
+      <p>Email trong commit là <b>văn bản tự do</b> — Git không xác thực gì cả. GitHub chỉ gắn commit vào tài khoản bạn nếu email trùng với email đã đăng ký. Gõ sai một ký tự = commit "mồ côi", không hiện ô xanh contribution.</p>
+    </div>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>ssh-keygen <span class="tag">nên làm</span></h4>
+    <p class="when"><b>Khi nào:</b> khi bạn chán gõ token mỗi lần push. Làm một lần cho mỗi máy.</p>
+    <div class="code" data-lang="bash"><pre><code><i># 1. Tạo khoá (ed25519 = thuật toán hiện đại, ngắn và mạnh)</i>
+ssh-keygen -t ed25519 -C <u>"nhutminhtran761@gmail.com"</u>
+<i>#    Enter 3 lần để dùng đường dẫn mặc định + không đặt passphrase</i>
+
+<i># 2. Copy khoá CÔNG KHAI (đuôi .pub — tuyệt đối không đưa file không có .pub)</i>
+cat ~/.ssh/id_ed25519.pub
+
+<i># 3. Dán vào GitHub → Settings → SSH and GPG keys → New SSH key</i>
+
+<i># 4. Kiểm tra</i>
+ssh -T git@github.com
+<i>#    "Hi username! You've successfully authenticated..." → xong</i></code></pre></div>
+    <div class="danger-box">
+      <b>An toàn</b>
+      <p>File <code>id_ed25519</code> (không có <code>.pub</code>) là <b>khoá riêng</b> — nó chính là danh tính của bạn. Không commit, không gửi cho ai, không đưa lên chat. Lộ khoá riêng = người khác push code dưới tên bạn.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. KHỞI TẠO ============ -->
+<section id="khoi-tao">
+  <h2><span class="num">03</span> Tạo &amp; clone repo</h2>
+  <p class="sub">Hai cách duy nhất để có một repo: tự tạo từ thư mục có sẵn, hoặc tải một repo đã tồn tại về.</p>
+
+  <div class="cmd" data-searchable>
+    <h4>git init <span class="tag">bắt đầu từ số 0</span></h4>
+    <p class="when"><b>Khi nào:</b> bạn có một thư mục project trên máy và muốn bắt đầu theo dõi nó bằng Git.</p>
+    <div class="code" data-lang="bash"><pre><code>mkdir my-project &amp;&amp; cd my-project
+<b>git</b> init
+<i># Initialized empty Git repository in .../my-project/.git/</i>
+
+<i># Kiểm tra: thư mục ẩn .git đã xuất hiện</i>
+ls -a</code></pre></div>
+    <p class="small muted">Cơ chế: <code>init</code> chỉ tạo thư mục <code>.git</code> chứa objects, refs, config. Xoá <code>.git</code> = project trở lại thành thư mục thường, mất sạch lịch sử (file hiện tại vẫn còn).</p>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>git clone <span class="tag">tải repo về</span></h4>
+    <p class="when"><b>Khi nào:</b> bắt đầu làm việc với một repo đã có trên GitHub (của bạn, của nhóm, hoặc mã nguồn mở).</p>
+    <div class="code" data-lang="bash"><pre><code><i># Qua SSH (khuyến nghị nếu đã cài SSH key)</i>
+<b>git</b> clone git@github.com:user/repo.git
+
+<i># Qua HTTPS</i>
+<b>git</b> clone https://github.com/user/repo.git
+
+<i># Clone vào thư mục tên khác</i>
+<b>git</b> clone https://github.com/user/repo.git thu-muc-cua-toi
+
+<i># Chỉ lấy lịch sử gần nhất — repo khổng lồ tải nhanh hơn nhiều</i>
+<b>git</b> clone --depth 1 https://github.com/user/repo.git
+
+<i># Clone đúng một nhánh</i>
+<b>git</b> clone -b develop --single-branch https://github.com/user/repo.git</code></pre></div>
+    <p class="small muted"><code>clone</code> = <code>init</code> + <code>remote add origin</code> + <code>fetch</code> + <code>checkout</code>. Bạn nhận <b>toàn bộ lịch sử</b>, không phải bản snapshot — nên vẫn xem log và tạo nhánh offline được.</p>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>.gitignore <span class="tag">không phải lệnh — nhưng bắt buộc biết</span></h4>
+    <p class="when"><b>Khi nào:</b> <b>ngay trước commit đầu tiên.</b> Đây là file quan trọng nhất mà người mới hay bỏ qua.</p>
+    <div class="code" data-lang="bash"><pre><code><i># Tạo file .gitignore ở gốc repo, ví dụ cho project Python:</i>
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env                <i># ← BÍ MẬT: API key, mật khẩu DB. KHÔNG BAO GIỜ commit</i>
+*.sqlite3
+.ipynb_checkpoints/
+data/raw/           <i># dataset nặng — dùng DVC hoặc Git LFS thay vì Git</i>
+models/*.pt         <i># file model hàng trăm MB</i>
+.DS_Store
+.idea/
+.vscode/
+
+<i># Mẫu sẵn cho mọi ngôn ngữ: https://github.com/github/gitignore</i></code></pre></div>
+    <div class="danger-box">
+      <b>Bẫy chí mạng</b>
+      <p><code>.gitignore</code> chỉ có tác dụng với file <b>chưa từng được track</b>. Nếu bạn đã lỡ commit <code>.env</code> rồi mới thêm vào <code>.gitignore</code>, file vẫn nằm trong lịch sử và ai clone cũng đọc được. Xử lý:</p>
+    </div>
+    <div class="code" data-lang="bash"><pre><code><i># Gỡ khỏi Git nhưng GIỮ file trên máy</i>
+<b>git</b> rm --cached .env
+<b>git</b> commit -m <u>"Remove .env from tracking"</u>
+
+<i># Nếu file chứa secret ĐÃ ĐƯỢC PUSH: coi như secret đã lộ.</i>
+<i># Việc đầu tiên là ĐỔI KEY/MẬT KHẨU, sau đó mới nghĩ tới xoá lịch sử.</i>
+<i># Xoá khỏi toàn bộ lịch sử (viết lại history — cẩn thận):</i>
+<i># pip install git-filter-repo</i>
+git filter-repo --invert-paths --path .env</code></pre></div>
+  </div>
+</section>
+
+<!-- ============ 4. HẰNG NGÀY ============ -->
+<section id="hang-ngay">
+  <h2><span class="num">04</span> Vòng lặp hằng ngày</h2>
+  <p class="sub">Bốn lệnh này chiếm khoảng 80% thời gian bạn dùng Git. Học thuộc đến mức cơ bắp.</p>
+
+  <div class="code" data-lang="bash"><pre><code><i># Vòng lặp chuẩn của một buổi làm việc</i>
+<b>git</b> pull                       <i># 1. lấy code mới nhất của nhóm về</i>
+<i>#    ... sửa code ...</i>
+<b>git</b> status                     <i># 2. mình vừa đụng vào những gì?</i>
+<b>git</b> add src/auth.py            <i># 3. chọn cái gì vào commit này</i>
+<b>git</b> commit -m <u>"Add JWT login"</u>  <i># 4. đóng dấu vào lịch sử</i>
+<b>git</b> push                       <i># 5. đẩy lên cho nhóm thấy</i></code></pre></div>
+
+  <div class="cmd" data-searchable>
+    <h4>git status <span class="tag">gõ nhiều nhất</span></h4>
+    <p class="when"><b>Khi nào:</b> bất cứ lúc nào bạn không chắc chuyện gì đang xảy ra. Không có tác dụng phụ, gõ thoải mái.</p>
+    <div class="code" data-lang="bash"><pre><code><b>git</b> status
+<b>git</b> status -s          <i># dạng ngắn: XY tên-file</i>
+<i>#  M  file.py   → đã sửa VÀ đã add (cột 1 = staging)</i>
+<i>#   M file.py   → đã sửa, CHƯA add (cột 2 = working dir)</i>
+<i># ?? file.py   → untracked</i>
+<i># A  file.py   → file mới đã add</i></code></pre></div>
+    <p class="small muted">Đây là lệnh "la bàn". Khi hoang mang, <code>git status</code> luôn nói bạn đang ở nhánh nào, file ở khu vực nào, và gợi ý sẵn lệnh tiếp theo.</p>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>git add <span class="tag">đưa vào giỏ</span></h4>
+    <p class="when"><b>Khi nào:</b> khi bạn đã sửa xong một mảng công việc và muốn nó vào commit sắp tới.</p>
+    <div class="code" data-lang="bash"><pre><code><b>git</b> add file.py              <i># một file</i>
+<b>git</b> add src/                 <i># cả thư mục</i>
+<b>git</b> add *.py                 <i># theo pattern</i>
+<b>git</b> add .                    <i># TẤT CẢ thay đổi từ thư mục hiện tại</i>
+<b>git</b> add -A                   <i># tất cả, kể cả file bị xoá, toàn repo</i>
+<b>git</b> add -u                   <i># chỉ file đã track (bỏ qua file mới)</i>
+
+<i># ⭐ Vũ khí bí mật: add TỪNG ĐOẠN trong một file</i>
+<b>git</b> add -p file.py
+<i>#   y = lấy đoạn này · n = bỏ qua · s = chia nhỏ hơn · q = thoát</i></code></pre></div>
+    <div class="tip">
+      <b>Nên dùng</b>
+      <p><code>git add -p</code> là thứ tách người dùng Git nghiệp dư khỏi chuyên nghiệp. Nó buộc bạn <b>đọc lại từng dòng mình vừa viết</b> trước khi commit — bắt được vô số <code>print()</code> debug bỏ quên và code thừa. Coi như một vòng self code-review miễn phí.</p>
+    </div>
+    <div class="warn">
+      <b>Bẫy</b>
+      <p><code>git add .</code> theo phản xạ là cách nhanh nhất để commit nhầm file <code>.env</code>, file 500MB, hoặc code nửa vời của tính năng khác. Luôn <code>git status</code> trước khi commit.</p>
+    </div>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>git commit <span class="tag">đóng dấu lịch sử</span></h4>
+    <p class="when"><b>Khi nào:</b> khi bạn hoàn thành <b>một đơn vị thay đổi có nghĩa</b> — không phải theo giờ, mà theo ý tưởng. "Sửa xong bug login" là một commit. "Làm việc buổi chiều" thì không.</p>
+    <div class="code" data-lang="bash"><pre><code><b>git</b> commit -m <u>"Add JWT authentication to login endpoint"</u>
+
+<i># Commit nhiều dòng: mở editor, dòng 1 = tiêu đề, cách 1 dòng, rồi mô tả</i>
+<b>git</b> commit
+
+<i># Tắt máy nhanh: add mọi file ĐÃ TRACK rồi commit luôn (bỏ qua file mới)</i>
+<b>git</b> commit -am <u>"Fix typo in README"</u>
+
+<i># Sửa commit vừa tạo (quên file / sai chính tả message)</i>
+<b>git</b> commit --amend -m <u>"Message mới"</u>
+<b>git</b> commit --amend --no-edit    <i># giữ nguyên message, chỉ thêm file vừa add</i></code></pre></div>
+    <div class="note">
+      <b>Cơ chế</b>
+      <p>Một commit <b>không</b> lưu "phần khác biệt" — nó lưu <b>snapshot toàn bộ cây thư mục</b> tại thời điểm đó (file không đổi thì trỏ tới object cũ, nên không tốn chỗ). Mỗi commit có: snapshot + tác giả + thời gian + message + <b>con trỏ tới commit cha</b>. Chuỗi con trỏ cha-con đó chính là "lịch sử", và hash SHA-1 của commit được tính từ toàn bộ nội dung đó — nên sửa quá khứ là đổi hash, tức là tạo commit hoàn toàn mới.</p>
+    </div>
+
+    <p><strong>Viết commit message tử tế</strong> — quy ước Conventional Commits, dùng rộng rãi trong ngành:</p>
+    <div class="code" data-lang="text"><pre><code>&lt;loại&gt;(&lt;phạm vi&gt;): &lt;mô tả ở thì mệnh lệnh, chữ thường, không dấu chấm&gt;
+
+feat(auth): add refresh token rotation
+fix(api): handle null user_id in /orders
+docs(readme): add setup instructions
+refactor(db): extract query builder
+test(auth): cover expired token case
+chore(deps): bump fastapi to 0.115
+
+❌ "update"  ❌ "fix bug"  ❌ "asdasd"  ❌ "commit lần 3"</code></pre></div>
+    <p class="small muted">Mẹo kiểm tra: message tốt điền được vào câu <i>"Nếu áp dụng commit này, nó sẽ ___"</i>. Bạn viết cho chính mình 6 tháng sau, lúc đang truy một bug bằng <code>git log</code>.</p>
+  </div>
+</section>
+
+<!-- ============ 5. LỊCH SỬ ============ -->
+<section id="lich-su">
+  <h2><span class="num">05</span> Đọc lịch sử &amp; so sánh</h2>
+  <p class="sub">Giá trị thật của Git không nằm ở việc lưu code, mà ở việc trả lời được: "dòng này ai viết, khi nào, và vì sao?"</p>
+
+  <div class="cmd" data-searchable>
+    <h4>git log <span class="tag">xem lịch sử</span></h4>
+    <p class="when"><b>Khi nào:</b> muốn biết chuyện gì đã xảy ra, tìm commit để revert, hoặc lấy mã hash.</p>
+    <div class="code" data-lang="bash"><pre><code><b>git</b> log                              <i># đầy đủ (q để thoát)</i>
+<b>git</b> log --oneline                    <i># mỗi commit 1 dòng — dùng nhiều nhất</i>
+<b>git</b> log --oneline --graph --all      <i># ⭐ vẽ cây nhánh bằng ASCII</i>
+<b>git</b> log -5                           <i># 5 commit gần nhất</i>
+<b>git</b> log --author=<u>"Minh"</u>              <i># lọc theo người</i>
+<b>git</b> log --since=<u>"2 weeks ago"</u>         <i># lọc theo thời gian</i>
+<b>git</b> log --grep=<u>"login"</u>                <i># tìm trong message</i>
+<b>git</b> log -S<u>"calculate_tax"</u>             <i># tìm commit THÊM/XOÁ chuỗi này (pickaxe)</i>
+<b>git</b> log -p file.py                   <i># lịch sử + diff của riêng 1 file</i>
+<b>git</b> log --stat                        <i># kèm số dòng thêm/xoá mỗi file</i></code></pre></div>
+    <div class="tip">
+      <b>Đáng đặt alias</b>
+      <p><code>git log -S"tên_hàm"</code> là công cụ điều tra mạnh nhất trong Git: nó tìm đúng commit đã <b>thêm hoặc xoá</b> chuỗi đó, thay vì chỉ tìm trong message. Truy nguồn gốc một dòng code lạ chỉ mất vài giây.</p>
+    </div>
+    <div class="code" data-lang="bash"><pre><code><i># Tạo alias 'git lg' cho đẹp và gọn</i>
+<b>git</b> config --global alias.lg <u>"log --oneline --graph --decorate --all"</u>
+<b>git</b> lg</code></pre></div>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>git diff <span class="tag">so sánh</span></h4>
+    <p class="when"><b>Khi nào:</b> trước khi add/commit, để xem chính xác mình đã đổi gì. Bắt buộc trước mỗi Pull Request.</p>
+    <div class="code" data-lang="bash"><pre><code><b>git</b> diff                    <i># working dir ↔ staging (thứ CHƯA add)</i>
+<b>git</b> diff --staged           <i># staging ↔ commit cuối (thứ SẮP commit)</i>
+<b>git</b> diff HEAD               <i># tất cả thay đổi so với commit cuối</i>
+<b>git</b> diff main..feature      <i># so 2 nhánh</i>
+<b>git</b> diff abc123..def456     <i># so 2 commit</i>
+<b>git</b> diff --stat             <i># chỉ tóm tắt số dòng</i>
+<b>git</b> diff -- file.py         <i># chỉ 1 file</i></code></pre></div>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>git show · git blame <span class="tag">điều tra</span></h4>
+    <p class="when"><b>Khi nào:</b> <code>show</code> để xem chi tiết một commit. <code>blame</code> khi gặp dòng code khó hiểu và cần biết ai viết, trong commit nào.</p>
+    <div class="code" data-lang="bash"><pre><code><b>git</b> show abc123              <i># nội dung đầy đủ của 1 commit</i>
+<b>git</b> show HEAD               <i># commit hiện tại</i>
+<b>git</b> show HEAD~2             <i># lùi 2 commit</i>
+<b>git</b> show abc123:src/app.py  <i># nội dung file TẠI commit đó</i>
+
+<b>git</b> blame file.py           <i># mỗi dòng: hash + tác giả + ngày</i>
+<b>git</b> blame -L 40,60 file.py  <i># chỉ dòng 40-60</i></code></pre></div>
+    <p class="small muted">Cú pháp trỏ commit: <code>HEAD</code> = hiện tại · <code>HEAD~1</code> = lùi 1 · <code>HEAD~3</code> = lùi 3 · <code>abc123</code> = hash (7 ký tự đầu là đủ) · <code>main@{2}</code> = vị trí nhánh main 2 bước trước.</p>
+  </div>
+</section>
+
+<!-- ============ 6. UNDO ============ -->
+<section id="undo">
+  <h2><span class="num">06</span> Sửa sai &amp; hoàn tác</h2>
+  <p class="sub">Phần quan trọng nhất của trang này. Biết undo là thứ biến Git từ "công cụ đáng sợ" thành "lưới an toàn".</p>
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Bạn muốn</th><th>Lệnh</th><th>Mất code không?</th></tr></thead>
+      <tbody>
+        <tr><td>Bỏ sửa đổi trong file (chưa add)</td><td><code>git restore file</code></td><td><b style="color:#ef6461">CÓ — vĩnh viễn</b></td></tr>
+        <tr><td>Bỏ add (giữ nguyên sửa đổi)</td><td><code>git restore --staged file</code></td><td>Không</td></tr>
+        <tr><td>Sửa message commit vừa rồi</td><td><code>git commit --amend</code></td><td>Không</td></tr>
+        <tr><td>Xoá commit cuối, giữ code trong staging</td><td><code>git reset --soft HEAD~1</code></td><td>Không</td></tr>
+        <tr><td>Xoá commit cuối, giữ code trong working dir</td><td><code>git reset HEAD~1</code></td><td>Không</td></tr>
+        <tr><td>Xoá commit cuối và xoá luôn code</td><td><code>git reset --hard HEAD~1</code></td><td><b style="color:#ef6461">CÓ</b></td></tr>
+        <tr><td>Huỷ một commit ĐÃ push</td><td><code>git revert abc123</code></td><td>Không — an toàn cho nhóm</td></tr>
+        <tr><td>Xoá file rác chưa track</td><td><code>git clean -fd</code></td><td><b style="color:#ef6461">CÓ</b></td></tr>
+        <tr><td>Lỡ tay reset --hard, cứu lại</td><td><code>git reflog</code> + <code>git reset --hard &lt;hash&gt;</code></td><td>Cứu được</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>git restore <span class="tag">hoàn tác ở mức file</span></h4>
+    <p class="when"><b>Khi nào:</b> bạn thử nghiệm một hướng sửa, thấy sai, muốn quay về nguyên trạng. Hoặc lỡ <code>add</code> nhầm file.</p>
+    <div class="code" data-lang="bash"><pre><code><i># Vứt bỏ mọi sửa đổi chưa add trong file (KHÔNG UNDO ĐƯỢC)</i>
+<b>git</b> restore file.py
+
+<i># Vứt bỏ toàn bộ sửa đổi chưa add trong repo</i>
+<b>git</b> restore .
+
+<i># Chỉ bỏ khỏi staging, sửa đổi vẫn còn trong file</i>
+<b>git</b> restore --staged file.py
+
+<i># Lấy lại nội dung file từ một commit cũ</i>
+<b>git</b> restore --source=HEAD~3 file.py
+
+<i># (Cú pháp cũ, vẫn gặp nhiều trong tài liệu — làm cùng việc)</i>
+<b>git</b> checkout -- file.py
+<b>git</b> reset HEAD file.py</code></pre></div>
+    <div class="danger-box">
+      <b>Không cứu được</b>
+      <p><code>git restore file</code> xoá thay đổi <b>chưa từng được Git ghi nhận</b> — không có <code>reflog</code> nào cứu được, vì Git chưa bao giờ thấy nó. Nếu chưa chắc, dùng <code>git stash</code> thay vì <code>restore</code>: cũng cho working dir sạch, nhưng cất code lại chứ không đốt.</p>
+    </div>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>git reset <span class="tag">di chuyển con trỏ nhánh</span></h4>
+    <p class="when"><b>Khi nào:</b> commit rồi mới nhận ra đặt sai chỗ / gộp nhầm / muốn chia lại. <b>Chỉ dùng cho commit CHƯA push.</b></p>
+    <div class="code" data-lang="bash"><pre><code><i># --soft : xoá commit, code quay về STAGING (sẵn sàng commit lại)</i>
+<b>git</b> reset --soft HEAD~1
+
+<i># --mixed (mặc định): xoá commit, code quay về WORKING DIR (chưa add)</i>
+<b>git</b> reset HEAD~1
+
+<i># --hard : xoá commit VÀ xoá luôn code. Working dir sạch bong.</i>
+<b>git</b> reset --hard HEAD~1
+
+<i># Gộp 3 commit lộn xộn cuối thành 1 commit sạch</i>
+<b>git</b> reset --soft HEAD~3
+<b>git</b> commit -m <u>"feat(auth): implement login flow"</u>
+
+<i># Vứt hết công sức local, đồng bộ y hệt remote</i>
+<b>git</b> fetch origin
+<b>git</b> reset --hard origin/main</code></pre></div>
+    <div class="note">
+      <b>Cơ chế — hiểu cái này là hiểu reset</b>
+      <p>Nhánh chỉ là một <b>con trỏ</b> tới một commit. <code>reset</code> di chuyển con trỏ đó về commit khác. Ba mức khác nhau ở chỗ nó có kéo theo staging và working dir hay không: <code>--soft</code> chỉ dời con trỏ · <code>--mixed</code> dời con trỏ + xoá staging · <code>--hard</code> dời con trỏ + xoá staging + ghi đè file trên đĩa.</p>
+    </div>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>git revert <span class="tag">undo an toàn cho nhóm</span></h4>
+    <p class="when"><b>Khi nào:</b> commit sai <b>đã push lên remote</b> và người khác đã pull về. Đây là lựa chọn ĐÚNG, không phải <code>reset</code>.</p>
+    <div class="code" data-lang="bash"><pre><code><i># Tạo commit MỚI có nội dung ngược lại commit cũ</i>
+<b>git</b> revert abc123
+
+<i># Revert nhiều commit</i>
+<b>git</b> revert abc123 def456
+
+<i># Revert một merge commit (-m 1 = giữ nhánh chính)</i>
+<b>git</b> revert -m 1 abc123
+
+<i># Revert nhưng chưa commit, để sửa thêm trước</i>
+<b>git</b> revert --no-commit abc123</code></pre></div>
+    <div class="tip">
+      <b>reset hay revert?</b>
+      <p>Nguyên tắc một câu: <b>chưa push → <code>reset</code>; đã push → <code>revert</code>.</b> <code>reset</code> viết lại lịch sử, nên nếu đồng đội đã pull commit đó về, lịch sử hai bên phân kỳ và họ sẽ gặp lỗi khó hiểu. <code>revert</code> chỉ thêm commit mới — lịch sử vẫn tuyến tính và ai cũng pull bình thường.</p>
+    </div>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>git reflog <span class="tag">phao cứu sinh</span></h4>
+    <p class="when"><b>Khi nào:</b> bạn vừa <code>reset --hard</code> nhầm, xoá nhầm nhánh, hoặc rebase hỏng. <b>Đọc kỹ phần này trước khi hoảng.</b></p>
+    <div class="code" data-lang="bash"><pre><code><b>git</b> reflog
+<i># abc1234 HEAD@{0}: reset: moving to HEAD~3</i>
+<i># def5678 HEAD@{1}: commit: feature quan trọng ← đây rồi!</i>
+<i># 9012abc HEAD@{2}: commit: work in progress</i>
+
+<i># Quay lại đúng trạng thái đó</i>
+<b>git</b> reset --hard def5678
+
+<i># Hoặc lấy về thành nhánh mới cho an toàn</i>
+<b>git</b> branch cuu-ho def5678</code></pre></div>
+    <div class="note">
+      <b>Vì sao cứu được?</b>
+      <p>Git <b>không xoá commit ngay</b>. <code>reflog</code> ghi lại mọi lần <code>HEAD</code> di chuyển trên máy bạn (mặc định giữ ~90 ngày). Commit "mất" thực ra vẫn nằm trong <code>.git</code>, chỉ là không nhánh nào trỏ tới nữa. Miễn là commit đó <b>từng được tạo ra</b>, bạn gần như luôn lấy lại được. Ngoại lệ duy nhất: code chưa bao giờ được commit.</p>
+    </div>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>git clean <span class="tag">dọn rác</span></h4>
+    <p class="when"><b>Khi nào:</b> thư mục đầy file build, file tạm, output không track và bạn muốn dọn sạch.</p>
+    <div class="code" data-lang="bash"><pre><code><b>git</b> clean -n        <i># ⚠️ LUÔN chạy cái này trước: chỉ LIỆT KÊ sẽ xoá gì</i>
+<b>git</b> clean -f        <i># xoá file untracked</i>
+<b>git</b> clean -fd       <i># xoá cả thư mục untracked</i>
+<b>git</b> clean -fdx      <i># xoá cả file bị .gitignore bỏ qua (kể cả .env, .venv!)</i></code></pre></div>
+    <div class="danger-box"><b>Không hồi phục</b><p><code>clean</code> xoá thẳng khỏi ổ đĩa, không vào thùng rác, không có trong Git. <code>-x</code> sẽ nuốt luôn file <code>.env</code> của bạn. Luôn <code>-n</code> trước.</p></div>
+  </div>
+</section>
+
+<!-- ============ 7. BRANCH ============ -->
+<section id="branch">
+  <h2><span class="num">07</span> Nhánh &amp; merge</h2>
+  <p class="sub">Branch trong Git rẻ đến mức gần như miễn phí — nó chỉ là một file 41 byte chứa mã hash. Đó là lý do văn hoá "một nhánh cho mỗi tính năng" trở thành chuẩn.</p>
+
+  <div class="cmd" data-searchable>
+    <h4>git branch · git switch <span class="tag">tạo &amp; chuyển nhánh</span></h4>
+    <p class="when"><b>Khi nào:</b> mỗi lần bắt đầu một tính năng mới, một thử nghiệm, hay một bản sửa lỗi. Đừng bao giờ code thẳng trên <code>main</code>.</p>
+    <div class="code" data-lang="bash"><pre><code><b>git</b> branch                       <i># liệt kê nhánh local (* = đang đứng)</i>
+<b>git</b> branch -a                    <i># kể cả nhánh remote</i>
+<b>git</b> branch -v                    <i># kèm commit cuối của mỗi nhánh</i>
+
+<b>git</b> branch feature/login         <i># tạo nhánh (nhưng chưa chuyển sang)</i>
+<b>git</b> switch feature/login         <i># chuyển sang</i>
+<b>git</b> switch -c feature/login      <i># ⭐ tạo VÀ chuyển, một lệnh</i>
+<b>git</b> switch -                     <i># quay lại nhánh vừa rời (như 'cd -')</i>
+
+<b>git</b> branch -d feature/login      <i># xoá nhánh ĐÃ merge (an toàn)</i>
+<b>git</b> branch -D feature/login      <i># xoá ép, kể cả chưa merge</i>
+<b>git</b> branch -m ten-moi            <i># đổi tên nhánh hiện tại</i>
+
+<i># (checkout là lệnh cũ làm cả hai việc — nay tách thành switch + restore)</i>
+<b>git</b> checkout -b feature/login</code></pre></div>
+    <p class="small muted">Quy ước đặt tên phổ biến: <code>feature/ten-tinh-nang</code> · <code>fix/mo-ta-loi</code> · <code>hotfix/su-co-production</code> · <code>chore/cong-viec-vat</code>. Nhất quán giúp cả nhóm đọc danh sách nhánh mà hiểu ngay.</p>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>git merge <span class="tag">gộp nhánh</span></h4>
+    <p class="when"><b>Khi nào:</b> tính năng trên nhánh phụ đã xong và được duyệt, giờ đưa về nhánh chính.</p>
+    <div class="code" data-lang="bash"><pre><code><i># Luôn ĐỨNG TRÊN nhánh nhận, rồi merge nhánh nguồn vào</i>
+<b>git</b> switch main
+<b>git</b> pull                          <i># cập nhật main trước đã</i>
+<b>git</b> merge feature/login
+
+<i># Ép tạo commit merge dù có thể fast-forward → giữ dấu vết nhánh</i>
+<b>git</b> merge --no-ff feature/login
+
+<i># Gộp cả nhánh thành ĐÚNG 1 commit trên main (lịch sử main rất sạch)</i>
+<b>git</b> merge --squash feature/login
+<b>git</b> commit -m <u>"feat: login flow"</u>
+
+<i># Đổi ý giữa chừng khi đang conflict</i>
+<b>git</b> merge --abort</code></pre></div>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 900 250" role="img" aria-label="So sánh merge và rebase">
+      <g font-family="JetBrains Mono, monospace" font-size="12">
+        <!-- MERGE -->
+        <text x="20" y="24" fill="#97a3b6" font-size="12.5" letter-spacing="1.4">MERGE — giữ nguyên hình dạng thật của lịch sử</text>
+        <line x1="40" y1="70" x2="300" y2="70" stroke="#212a37" stroke-width="2"/>
+        <path d="M140,70 C170,70 175,116 205,116" stroke="#a8e04a" stroke-width="2" fill="none"/>
+        <path d="M265,116 C295,116 300,70 330,70" stroke="#a8e04a" stroke-width="2" fill="none"/>
+        <line x1="300" y1="70" x2="400" y2="70" stroke="#212a37" stroke-width="2"/>
+        <g fill="#0d1016" stroke="#55b0f5" stroke-width="2">
+          <circle cx="40" cy="70" r="7"/><circle cx="90" cy="70" r="7"/><circle cx="140" cy="70" r="7"/>
+          <circle cx="240" cy="70" r="7"/>
+        </g>
+        <circle cx="330" cy="70" r="8" fill="#55b0f5" stroke="#0d1016" stroke-width="2"/>
+        <g fill="#0d1016" stroke="#a8e04a" stroke-width="2">
+          <circle cx="205" cy="116" r="7"/><circle cx="265" cy="116" r="7"/>
+        </g>
+        <text x="330" y="52" text-anchor="middle" fill="#55b0f5" font-size="11">merge commit</text>
+        <text x="410" y="74" fill="#66738a" font-size="11.5">main</text>
+        <text x="235" y="140" text-anchor="middle" fill="#a8e04a" font-size="11">feature</text>
+
+        <!-- REBASE -->
+        <text x="500" y="24" fill="#97a3b6" font-size="12.5" letter-spacing="1.4">REBASE — chép commit sang, lịch sử thành đường thẳng</text>
+        <line x1="520" y1="70" x2="860" y2="70" stroke="#212a37" stroke-width="2"/>
+        <g fill="#0d1016" stroke="#55b0f5" stroke-width="2">
+          <circle cx="520" cy="70" r="7"/><circle cx="570" cy="70" r="7"/><circle cx="620" cy="70" r="7"/><circle cx="670" cy="70" r="7"/>
+        </g>
+        <g fill="#0d1016" stroke="#a8e04a" stroke-width="2">
+          <circle cx="740" cy="70" r="7"/><circle cx="800" cy="70" r="7"/>
+        </g>
+        <text x="770" y="52" text-anchor="middle" fill="#a8e04a" font-size="11">commit được chép lại (hash MỚI)</text>
+        <g stroke="#66738a" stroke-width="1.2" stroke-dasharray="3 3" fill="none">
+          <path d="M700,116 C715,116 725,84 738,78"/>
+          <path d="M760,116 C780,116 790,84 798,78"/>
+        </g>
+        <g fill="#0d1016" stroke="#66738a" stroke-width="1.5" opacity=".5">
+          <circle cx="690" cy="120" r="6"/><circle cx="750" cy="120" r="6"/>
+        </g>
+        <text x="720" y="146" text-anchor="middle" fill="#66738a" font-size="11">commit cũ bị bỏ lại</text>
+      </g>
+      <text x="450" y="212" text-anchor="middle" font-family="Be Vietnam Pro, sans-serif" font-size="13" fill="#97a3b6">
+        Cùng một kết quả code. Khác nhau ở chỗ: merge kể lại sự thật, rebase kể một câu chuyện gọn gàng hơn.
+      </text>
+    </svg>
+  </figure>
+
+    <p><strong>Fast-forward là gì?</strong> Nếu từ lúc bạn tách nhánh, <code>main</code> không có commit mới nào, Git chỉ cần <b>đẩy con trỏ main tới trước</b> — không tạo commit merge nào. Gọn, nhưng mất dấu vết là đã từng có một nhánh. Dùng <code>--no-ff</code> khi bạn muốn giữ dấu vết đó cho dễ revert cả tính năng sau này.</p>
+  </div>
+</section>
+
+<!-- ============ 8. CONFLICT ============ -->
+<section id="conflict">
+  <h2><span class="num">08</span> Xử lý conflict</h2>
+  <p class="sub">Conflict không phải lỗi, và không phải dấu hiệu bạn làm sai. Nó chỉ là Git nói: "hai người sửa cùng một dòng, tôi không dám tự quyết".</p>
+
+  <div class="cmd" data-searchable>
+    <h4>Quy trình 5 bước <span class="tag">bình tĩnh</span></h4>
+    <div class="code" data-lang="bash"><pre><code><i># 1. Git báo conflict, dừng lại giữa chừng</i>
+<b>git</b> merge feature/login
+<i># CONFLICT (content): Merge conflict in src/auth.py</i>
+
+<i># 2. Xem file nào dính</i>
+<b>git</b> status
+
+<i># 3. Mở file, sửa tay (xem dưới), xoá hết dấu &lt;&lt;&lt; === &gt;&gt;&gt;</i>
+
+<i># 4. Đánh dấu đã giải quyết</i>
+<b>git</b> add src/auth.py
+
+<i># 5. Hoàn tất</i>
+<b>git</b> commit          <i># message merge được điền sẵn, chỉ cần lưu</i>
+
+<i># Nếu muốn bỏ cuộc, quay về trước khi merge</i>
+<b>git</b> merge --abort</code></pre></div>
+
+    <p><strong>Đọc dấu conflict:</strong></p>
+    <div class="code" data-lang="text"><pre><code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+    timeout = 30          ← phiên bản của NHÁNH BẠN ĐANG ĐỨNG
+=======
+    timeout = 60          ← phiên bản của NHÁNH ĐANG MERGE VÀO
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/login
+
+<i>Bạn quyết định: giữ 30, giữ 60, hay viết cái thứ ba (ví dụ timeout = 45).
+Sau đó XOÁ SẠCH cả ba dòng dấu &lt;&lt;&lt;, ===, &gt;&gt;&gt;.</i></code></pre></div>
+    <div class="warn">
+      <b>Bẫy kinh điển</b>
+      <p>Quên xoá dòng <code>=======</code> rồi commit. Code sẽ lỗi cú pháp và cả nhóm nhận được một commit hỏng. Sau khi sửa xong, <b>luôn chạy thử code</b> trước khi <code>git commit</code>, và tìm nhanh bằng <code>grep -rn "&lt;&lt;&lt;&lt;&lt;&lt;&lt;" .</code></p>
+    </div>
+    <div class="code" data-lang="bash"><pre><code><i># Công cụ hỗ trợ</i>
+<b>git</b> diff                       <i># xem các đoạn đang conflict</i>
+<b>git</b> checkout --ours file.py    <i># lấy nguyên bản nhánh mình</i>
+<b>git</b> checkout --theirs file.py  <i># lấy nguyên bản nhánh kia</i>
+<b>git</b> mergetool                  <i># mở công cụ 3 cửa sổ (VS Code làm việc này rất tốt)</i></code></pre></div>
+    <div class="tip">
+      <b>Phòng bệnh hơn chữa</b>
+      <p>Conflict lớn gần như luôn là hệ quả của nhánh sống quá lâu. Ba thói quen giảm conflict tới mức gần bằng không: <b>pull main về nhánh mình mỗi ngày</b>, <b>giữ nhánh ngắn (dưới 3 ngày)</b>, và <b>chia việc sao cho hai người ít đụng cùng file</b>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 9. REMOTE ============ -->
+<section id="remote">
+  <h2><span class="num">09</span> Remote: push · pull · fetch</h2>
+  <p class="sub">Remote chỉ là một repo Git khác đặt ở nơi khác. Không có phép màu nào ở đây — GitHub không "biết" gì hơn máy bạn.</p>
+
+  <div class="cmd" data-searchable>
+    <h4>git remote <span class="tag">quản lý kết nối</span></h4>
+    <p class="when"><b>Khi nào:</b> sau <code>git init</code> muốn nối lên GitHub, hoặc khi đổi URL repo.</p>
+    <div class="code" data-lang="bash"><pre><code><b>git</b> remote -v                    <i># xem đang nối tới đâu</i>
+<b>git</b> remote add origin git@github.com:user/repo.git
+<b>git</b> remote set-url origin &lt;url-moi&gt;
+<b>git</b> remote remove origin
+<b>git</b> remote add upstream https://github.com/goc/repo.git   <i># repo gốc khi fork</i></code></pre></div>
+    <p class="small muted"><code>origin</code> chỉ là <b>tên gọi quy ước</b> cho remote chính, không phải từ khoá của Git. Khi fork một dự án mã nguồn mở, quy ước là: <code>origin</code> = bản fork của bạn, <code>upstream</code> = repo gốc.</p>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>git push <span class="tag">đẩy lên</span></h4>
+    <p class="when"><b>Khi nào:</b> commit xong và muốn backup lên mây / cho nhóm thấy / mở Pull Request.</p>
+    <div class="code" data-lang="bash"><pre><code><b>git</b> push                              <i># đẩy nhánh hiện tại (nếu đã có tracking)</i>
+<b>git</b> push origin main                  <i># nói rõ remote và nhánh</i>
+<b>git</b> push -u origin feature/login      <i># ⭐ lần đầu đẩy nhánh mới: -u để nhớ liên kết</i>
+<b>git</b> push --tags                       <i># đẩy tag (không tự đi theo push thường)</i>
+<b>git</b> push origin --delete ten-nhanh    <i># xoá nhánh trên remote</i>
+
+<i># Ép ghi đè sau khi rebase — CHỈ trên nhánh riêng của bạn</i>
+<b>git</b> push --force-with-lease</code></pre></div>
+    <div class="danger-box">
+      <b>--force vs --force-with-lease</b>
+      <p><code>--force</code> ghi đè remote vô điều kiện — nếu đồng đội vừa push gì đó, code của họ bốc hơi. <code>--force-with-lease</code> kiểm tra trước: nếu remote đã đổi so với lần bạn fetch cuối, nó từ chối. <b>Luôn dùng bản <code>-with-lease</code></b>. Và tuyệt đối không force lên <code>main</code>/<code>develop</code>.</p>
+    </div>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>git fetch vs git pull <span class="tag">kéo về</span></h4>
+    <p class="when"><b>Khi nào:</b> đầu mỗi buổi làm việc, và trước khi tạo nhánh mới. <code>fetch</code> khi muốn xem trước; <code>pull</code> khi muốn nhập luôn.</p>
+    <div class="code" data-lang="bash"><pre><code><i># fetch: TẢI VỀ nhưng KHÔNG đụng vào code của bạn — an toàn tuyệt đối</i>
+<b>git</b> fetch origin
+<b>git</b> log HEAD..origin/main --oneline   <i># xem nhóm đã làm gì trước khi nhập</i>
+<b>git</b> diff HEAD origin/main             <i># xem chi tiết</i>
+
+<i># pull = fetch + merge (gộp luôn vào nhánh hiện tại)</i>
+<b>git</b> pull
+
+<i># pull kiểu rebase: lịch sử thẳng, không sinh merge commit rác</i>
+<b>git</b> pull --rebase</code></pre></div>
+    <div class="tip">
+      <b>Thói quen tốt</b>
+      <p>Trong repo lạ hoặc nhánh quan trọng, <code>fetch</code> rồi xem <code>log</code> trước, <code>merge</code> sau. <code>pull</code> gộp hai bước vào một và đó là lúc người ta bị bất ngờ. Với nhánh cá nhân, <code>pull --rebase</code> giữ lịch sử gọn hơn hẳn.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10. REBASE ============ -->
+<section id="rebase">
+  <h2><span class="num">10</span> Rebase · cherry-pick · stash · tag</h2>
+  <p class="sub">Nhóm lệnh "trung cấp". Không bắt buộc cho tuần đầu, nhưng dùng thạo thì lịch sử repo của bạn trông như của người có nghề.</p>
+
+  <div class="cmd" data-searchable>
+    <h4>git rebase <span class="tag">viết lại lịch sử</span></h4>
+    <p class="when"><b>Khi nào:</b> nhánh của bạn đã cũ so với <code>main</code> và bạn muốn "dời chân đế" lên đỉnh main, để Pull Request là một đường thẳng sạch sẽ.</p>
+    <div class="code" data-lang="bash"><pre><code><i># Đứng trên nhánh của mình, dời nó lên đỉnh main</i>
+<b>git</b> switch feature/login
+<b>git</b> rebase main
+
+<i># Nếu conflict: sửa file → git add → tiếp tục (KHÔNG commit)</i>
+<b>git</b> add file.py
+<b>git</b> rebase --continue
+<b>git</b> rebase --skip       <i># bỏ qua commit này</i>
+<b>git</b> rebase --abort      <i># huỷ, trả về nguyên trạng</i>
+
+<i># ⭐ Rebase tương tác: dọn dẹp 5 commit cuối trước khi mở PR</i>
+<b>git</b> rebase -i HEAD~5
+<i>#   pick    = giữ nguyên</i>
+<i>#   reword  = sửa message</i>
+<i>#   squash  = gộp vào commit phía trên (giữ cả 2 message)</i>
+<i>#   fixup   = gộp vào commit phía trên (vứt message)</i>
+<i>#   drop    = xoá hẳn commit</i>
+<i>#   đổi thứ tự dòng = đổi thứ tự commit</i></code></pre></div>
+    <div class="danger-box">
+      <b>Luật vàng của rebase</b>
+      <p><b>Không bao giờ rebase nhánh mà người khác đang dùng.</b> Rebase tạo ra commit <b>hash mới</b> cho cùng nội dung; người đã pull nhánh cũ về sẽ thấy lịch sử phân kỳ và rất dễ tạo ra commit trùng lặp khi họ pull. An toàn: chỉ rebase commit chưa push, hoặc nhánh riêng chỉ mình bạn đụng vào.</p>
+    </div>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>git stash <span class="tag">cất tạm</span></h4>
+    <p class="when"><b>Khi nào:</b> đang làm dở thì sếp bảo "sửa gấp bug production". Bạn cần working dir sạch để chuyển nhánh, nhưng chưa muốn commit code nửa vời.</p>
+    <div class="code" data-lang="bash"><pre><code><b>git</b> stash                          <i># cất mọi thay đổi, working dir sạch</i>
+<b>git</b> stash push -m <u>"dở phần login"</u>   <i># cất kèm ghi chú</i>
+<b>git</b> stash -u                       <i># cất cả file untracked</i>
+
+<b>git</b> stash list                     <i># stash@{0}: On main: dở phần login</i>
+<b>git</b> stash show -p stash@{0}        <i># xem nội dung</i>
+
+<b>git</b> stash pop                      <i># lấy ra + xoá khỏi kho</i>
+<b>git</b> stash apply stash@{1}          <i># lấy ra nhưng GIỮ trong kho</i>
+<b>git</b> stash drop stash@{0}           <i># xoá 1 stash</i>
+<b>git</b> stash clear                    <i># xoá sạch (cẩn thận)</i></code></pre></div>
+    <p class="small muted">Stash là ngăn kéo <b>dùng chung cho cả repo</b>, không thuộc nhánh nào — bạn stash ở nhánh A và pop được ở nhánh B. Đừng để stash chất đống nhiều ngày; sau một tuần bạn sẽ không nhớ <code>stash@{3}</code> là gì nữa.</p>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>git cherry-pick <span class="tag">nhặt một commit</span></h4>
+    <p class="when"><b>Khi nào:</b> có một commit hay ở nhánh khác và bạn chỉ cần đúng commit đó — ví dụ đưa một hotfix từ <code>develop</code> sang <code>main</code>.</p>
+    <div class="code" data-lang="bash"><pre><code><b>git</b> switch main
+<b>git</b> cherry-pick abc123           <i># chép commit abc123 sang nhánh hiện tại</i>
+<b>git</b> cherry-pick abc123 def456    <i># nhiều commit</i>
+<b>git</b> cherry-pick abc123..def456  <i># một khoảng</i>
+<b>git</b> cherry-pick -n abc123       <i># chép nhưng chưa commit, để sửa thêm</i></code></pre></div>
+    <p class="small muted">Cảnh báo: cherry-pick tạo commit mới với nội dung giống nhưng hash khác. Nếu sau đó bạn merge cả nhánh nguồn vào, cùng một thay đổi có thể xuất hiện hai lần trong lịch sử.</p>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>git tag <span class="tag">đánh dấu phiên bản</span></h4>
+    <p class="when"><b>Khi nào:</b> phát hành một phiên bản (v1.0.0), hoặc đánh dấu một mốc cần quay lại được — ví dụ "kết quả model đạt accuracy 0.94".</p>
+    <div class="code" data-lang="bash"><pre><code><b>git</b> tag                                   <i># liệt kê</i>
+<b>git</b> tag -a v1.0.0 -m <u>"Bản phát hành đầu"</u>   <i># tag có chú thích (nên dùng)</i>
+<b>git</b> tag -a v1.0.0 abc123 -m <u>"..."</u>          <i># tag một commit cũ</i>
+<b>git</b> show v1.0.0
+<b>git</b> push origin v1.0.0                    <i># tag KHÔNG tự push</i>
+<b>git</b> push --tags                           <i># đẩy tất cả tag</i>
+<b>git</b> tag -d v1.0.0                         <i># xoá local</i>
+<b>git</b> push origin --delete v1.0.0           <i># xoá trên remote</i></code></pre></div>
+    <p class="small muted">Quy ước Semantic Versioning: <code>vMAJOR.MINOR.PATCH</code> — <b>MAJOR</b> khi phá vỡ tương thích, <b>MINOR</b> khi thêm tính năng vẫn tương thích, <b>PATCH</b> khi chỉ sửa lỗi.</p>
+  </div>
+</section>
+
+<!-- ============ 11. GITHUB ============ -->
+<section id="github">
+  <h2><span class="num">11</span> GitHub &amp; Pull Request</h2>
+  <p class="sub">Git là công cụ; GitHub là nơi cộng tác. Pull Request không phải tính năng của Git — nó là phát minh của GitHub, và là nơi phần lớn việc "làm việc nhóm" thật sự diễn ra.</p>
+
+  <div class="cmd" data-searchable>
+    <h4>Quy trình đóng góp chuẩn <span class="tag">feature branch workflow</span></h4>
+    <div class="code" data-lang="bash"><pre><code><i># 1. Đồng bộ main</i>
+<b>git</b> switch main &amp;&amp; <b>git</b> pull
+
+<i># 2. Tách nhánh cho công việc mới</i>
+<b>git</b> switch -c feature/user-profile
+
+<i># 3. Làm việc, commit nhỏ và thường xuyên</i>
+<b>git</b> add -p &amp;&amp; <b>git</b> commit -m <u>"feat(profile): add avatar upload"</u>
+
+<i># 4. Đẩy nhánh lên</i>
+<b>git</b> push -u origin feature/user-profile
+
+<i># 5. Mở PR trên GitHub (hoặc bằng GitHub CLI)</i>
+gh pr create --title <u>"Add user profile"</u> --body <u>"Closes #12"</u>
+
+<i># 6. Sửa theo review → commit tiếp → push (PR tự cập nhật)</i>
+<b>git</b> commit -m <u>"fix: validate avatar size"</u> &amp;&amp; <b>git</b> push
+
+<i># 7. Merge xong, dọn dẹp</i>
+<b>git</b> switch main &amp;&amp; <b>git</b> pull
+<b>git</b> branch -d feature/user-profile</code></pre></div>
+    <p class="small muted">Viết <code>Closes #12</code> trong mô tả PR: khi PR được merge, GitHub tự đóng issue số 12. Các từ khoá dùng được: <code>closes</code>, <code>fixes</code>, <code>resolves</code>.</p>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>Fork &amp; đóng góp mã nguồn mở <span class="tag">open source</span></h4>
+    <p class="when"><b>Khi nào:</b> bạn muốn sửa một dự án không có quyền push. Đây cũng là cách xây dựng hồ sơ GitHub gây ấn tượng.</p>
+    <div class="code" data-lang="bash"><pre><code><i># 1. Bấm Fork trên GitHub → clone BẢN FORK của bạn về</i>
+<b>git</b> clone git@github.com:BAN/repo.git &amp;&amp; cd repo
+
+<i># 2. Thêm repo GỐC làm upstream để còn đồng bộ về sau</i>
+<b>git</b> remote add upstream https://github.com/GOC/repo.git
+
+<i># 3. Đồng bộ với repo gốc trước khi làm gì</i>
+<b>git</b> fetch upstream
+<b>git</b> switch main
+<b>git</b> merge upstream/main
+
+<i># 4. Tách nhánh, làm việc, push lên FORK của bạn, rồi mở PR về repo gốc</i>
+<b>git</b> switch -c fix/typo-in-docs</code></pre></div>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>Chọn branching strategy <span class="tag">chiến lược nhóm</span></h4>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Chiến lược</th><th>Hình dạng</th><th>Hợp với</th></tr></thead>
+        <tbody>
+          <tr><td><b>GitHub Flow</b></td><td><code>main</code> + nhánh feature ngắn, merge qua PR, deploy liên tục</td><td>Hầu hết dự án web/API, nhóm nhỏ. <b>Bắt đầu bằng cái này.</b></td></tr>
+          <tr><td><b>Git Flow</b></td><td><code>main</code>, <code>develop</code>, <code>feature/*</code>, <code>release/*</code>, <code>hotfix/*</code></td><td>Sản phẩm có bản phát hành theo phiên bản (app desktop, mobile). Khá nặng nề.</td></tr>
+          <tr><td><b>Trunk-based</b></td><td>Mọi người commit thẳng vào <code>main</code>, nhánh sống dưới 1 ngày, dựa vào feature flag</td><td>Nhóm giỏi, CI/CD mạnh, test tự động dày.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note">
+      <b>Phản biện</b>
+      <p>Git Flow được dạy rất nhiều ở trường nhưng ngày càng ít dùng trong thực tế — chính tác giả của nó cũng đã viết ghi chú khuyên cân nhắc trước khi áp dụng. Với dự án cá nhân và hầu hết công ty làm web, <b>GitHub Flow là đủ và nhanh hơn nhiều</b>. Đừng chọn quy trình phức tạp chỉ vì nó trông chuyên nghiệp.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 12. NÂNG CAO ============ -->
+<section id="nang-cao">
+  <h2><span class="num">12</span> Lệnh nâng cao</h2>
+  <p class="sub">Không cần cho tuần đầu. Nhưng khi cần thì không gì thay thế được.</p>
+
+  <div class="cmd" data-searchable>
+    <h4>git bisect <span class="tag">săn bug bằng nhị phân</span></h4>
+    <p class="when"><b>Khi nào:</b> "hai tuần trước còn chạy, giờ hỏng, mà có 300 commit ở giữa". Bisect tìm ra thủ phạm trong ~8 lần thử.</p>
+    <div class="code" data-lang="bash"><pre><code><b>git</b> bisect start
+<b>git</b> bisect bad                  <i># commit hiện tại: hỏng</i>
+<b>git</b> bisect good v1.0.0          <i># commit này: còn tốt</i>
+<i># Git tự nhảy tới commit giữa → bạn test → trả lời:</i>
+<b>git</b> bisect good                 <i># hoặc: git bisect bad</i>
+<i># ... lặp lại vài lần, Git chỉ đúng commit gây lỗi</i>
+<b>git</b> bisect reset                <i># quay về trạng thái ban đầu</i>
+
+<i># Tự động hoá hoàn toàn nếu có test</i>
+<b>git</b> bisect run pytest tests/test_login.py</code></pre></div>
+    <p class="small muted">300 commit → khoảng 8 lần kiểm tra (log₂300 ≈ 8.2). Đây là ứng dụng thực tế đẹp nhất của binary search mà bạn sẽ gặp — liên hệ thẳng với <a href="../02-Giai-Thuat-CTDL/README.md">mảng 02</a>.</p>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>git worktree <span class="tag">nhiều nhánh cùng lúc</span></h4>
+    <p class="when"><b>Khi nào:</b> cần mở đồng thời hai nhánh (ví dụ đang train model ở nhánh A, cần sửa gấp bug ở nhánh B) mà không muốn stash.</p>
+    <div class="code" data-lang="bash"><pre><code><b>git</b> worktree add ../hotfix-dir hotfix/loi-login
+<i># Giờ có 2 thư mục, 2 nhánh, dùng chung 1 kho .git</i>
+<b>git</b> worktree list
+<b>git</b> worktree remove ../hotfix-dir</code></pre></div>
+  </div>
+
+  <div class="cmd" data-searchable>
+    <h4>Các lệnh còn lại nên biết mặt <span class="tag">tra khi cần</span></h4>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Lệnh</th><th>Dùng khi</th></tr></thead>
+        <tbody>
+          <tr><td><code>git mv / git rm</code></td><td>Đổi tên / xoá file mà Git ghi nhận đúng thao tác</td></tr>
+          <tr><td><code>git shortlog -sn</code></td><td>Xem ai commit nhiều nhất trong repo</td></tr>
+          <tr><td><code>git archive</code></td><td>Xuất repo thành .zip không kèm thư mục .git</td></tr>
+          <tr><td><code>git submodule</code></td><td>Nhúng một repo khác vào repo này (dùng ít, hay gây rắc rối)</td></tr>
+          <tr><td><code>git lfs</code></td><td>Lưu file nặng (model .pt, dataset, video) ngoài Git — <b>rất cần cho AI/ML</b></td></tr>
+          <tr><td><code>git sparse-checkout</code></td><td>Chỉ checkout một phần thư mục của monorepo khổng lồ</td></tr>
+          <tr><td><code>git hooks</code> (<code>.git/hooks/</code>)</td><td>Chạy script tự động trước commit/push — nền tảng của <code>pre-commit</code>, lint tự động</td></tr>
+          <tr><td><code>git gc</code></td><td>Dọn dẹp, nén lại kho object khi repo phình to</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tip">
+      <b>Liên quan tới định hướng AI/ML của bạn</b>
+      <p>Git <b>không</b> hợp để version dataset và model weight (file nhị phân nặng, mỗi lần đổi là lưu nguyên bản mới). Hệ sinh thái chuẩn: <b>Git LFS</b> cho file nặng, <b>DVC</b> để version dataset/pipeline, <b>MLflow / Weights &amp; Biases</b> để version experiment. Nhưng tất cả đều <b>xây trên Git</b> — nên nền Git vững là điều kiện cần.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 13. TRA CỨU ============ -->
+<section id="tra-cuu">
+  <h2><span class="num">13</span> Bảng tra cứu "tôi muốn…"</h2>
+  <p class="sub">Đọc theo nhu cầu, không theo tên lệnh. Đây là bảng bạn sẽ quay lại nhiều nhất.</p>
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Tôi muốn…</th><th>Gõ</th></tr></thead>
+      <tbody>
+        <tr><td>Biết mình đang ở đâu, đã đụng gì</td><td><code>git status</code></td></tr>
+        <tr><td>Xem lịch sử gọn, có cây nhánh</td><td><code>git log --oneline --graph --all</code></td></tr>
+        <tr><td>Xem mình vừa sửa những dòng nào</td><td><code>git diff</code></td></tr>
+        <tr><td>Chỉ commit một phần thay đổi trong file</td><td><code>git add -p</code></td></tr>
+        <tr><td>Sửa message commit vừa tạo</td><td><code>git commit --amend</code></td></tr>
+        <tr><td>Quên add một file vào commit vừa rồi</td><td><code>git add f &amp;&amp; git commit --amend --no-edit</code></td></tr>
+        <tr><td>Bỏ hết sửa đổi chưa commit trong 1 file</td><td><code>git restore file</code></td></tr>
+        <tr><td>Bỏ <code>add</code> nhưng giữ sửa đổi</td><td><code>git restore --staged file</code></td></tr>
+        <tr><td>Gộp 3 commit cuối thành 1</td><td><code>git reset --soft HEAD~3 &amp;&amp; git commit</code></td></tr>
+        <tr><td>Huỷ commit đã push</td><td><code>git revert &lt;hash&gt;</code></td></tr>
+        <tr><td>Cất code dở để chuyển nhánh gấp</td><td><code>git stash</code> → <code>git stash pop</code></td></tr>
+        <tr><td>Tạo nhánh mới và nhảy sang luôn</td><td><code>git switch -c feature/x</code></td></tr>
+        <tr><td>Quay về nhánh vừa rời</td><td><code>git switch -</code></td></tr>
+        <tr><td>Cập nhật nhánh mình theo main mới nhất</td><td><code>git fetch &amp;&amp; git rebase origin/main</code></td></tr>
+        <tr><td>Xoá nhánh local đã merge</td><td><code>git branch -d ten</code></td></tr>
+        <tr><td>Xoá nhánh trên GitHub</td><td><code>git push origin --delete ten</code></td></tr>
+        <tr><td>Lấy 1 commit từ nhánh khác</td><td><code>git cherry-pick &lt;hash&gt;</code></td></tr>
+        <tr><td>Xem ai viết dòng code này</td><td><code>git blame file</code></td></tr>
+        <tr><td>Tìm commit đã thêm/xoá một chuỗi</td><td><code>git log -S"chuoi"</code></td></tr>
+        <tr><td>Tìm commit gây ra bug</td><td><code>git bisect start</code></td></tr>
+        <tr><td>Xem file này hồi xưa trông thế nào</td><td><code>git show HEAD~5:file.py</code></td></tr>
+        <tr><td>Gỡ file khỏi Git nhưng giữ trên máy</td><td><code>git rm --cached file</code></td></tr>
+        <tr><td>Dọn file rác chưa track</td><td><code>git clean -n</code> (xem trước) → <code>git clean -fd</code></td></tr>
+        <tr><td>Vứt hết local, giống hệt remote</td><td><code>git fetch &amp;&amp; git reset --hard origin/main</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 14. SOS ============ -->
+<section id="sos">
+  <h2><span class="num">14</span> Cấp cứu</h2>
+  <p class="sub">Bốn tình huống khiến người mới hoảng loạn nhất. Gần như tất cả đều cứu được.</p>
+
+  <details data-searchable>
+    <summary>😱 Tôi lỡ <code>git reset --hard</code> và mất công sức mấy tiếng</summary>
+    <p><b>Cứu được</b> nếu code đó đã từng được commit.</p>
+    <div class="code" data-lang="bash"><pre><code><b>git</b> reflog                    <i># tìm dòng commit cuối trước khi reset</i>
+<b>git</b> reset --hard HEAD@{1}    <i># hoặc dùng hash cụ thể</i></code></pre></div>
+    <p class="small muted">Nếu code <b>chưa từng commit</b> thì Git không có bản sao nào — hy vọng cuối cùng là Local History của VS Code (Ctrl+Shift+P → "Local History").</p>
+  </details>
+
+  <details data-searchable>
+    <summary>😱 Tôi commit nhầm vào nhánh main</summary>
+    <div class="code" data-lang="bash"><pre><code><i># Chưa push: dời commit sang nhánh đúng</i>
+<b>git</b> branch feature/dung-cho        <i># đánh dấu vị trí hiện tại</i>
+<b>git</b> reset --hard HEAD~1            <i># trả main về trước</i>
+<b>git</b> switch feature/dung-cho        <i># commit vẫn còn nguyên ở đây</i>
+
+<i># Đã push: dùng revert cho an toàn</i>
+<b>git</b> revert &lt;hash&gt; &amp;&amp; <b>git</b> push</code></pre></div>
+  </details>
+
+  <details data-searchable>
+    <summary>😱 Tôi push nhầm file <code>.env</code> chứa API key lên GitHub</summary>
+    <div class="danger-box">
+      <b>Thứ tự xử lý rất quan trọng</b>
+      <p><b>1. Đổi ngay toàn bộ key/mật khẩu đã lộ.</b> Repo public bị bot quét trong vòng vài giây — coi như key đã mất. Xoá lịch sử là bước 2, không phải bước 1.</p>
+    </div>
+    <div class="code" data-lang="bash"><pre><code><i># 2. Gỡ khỏi tracking + thêm vào .gitignore</i>
+<b>git</b> rm --cached .env
+echo <u>".env"</u> &gt;&gt; .gitignore
+<b>git</b> commit -m <u>"chore: stop tracking .env"</u>
+
+<i># 3. Xoá khỏi TOÀN BỘ lịch sử (viết lại history — báo cả nhóm trước)</i>
+<i># pip install git-filter-repo</i>
+git filter-repo --invert-paths --path .env
+<b>git</b> push --force-with-lease</code></pre></div>
+  </details>
+
+  <details data-searchable>
+    <summary>😱 Git bảo "Your branch and 'origin/main' have diverged"</summary>
+    <p>Nghĩa là: bạn có commit local mà remote chưa có, <b>và</b> remote có commit mà bạn chưa có. Ba lựa chọn:</p>
+    <div class="code" data-lang="bash"><pre><code><i># A. Gộp lại (an toàn nhất, sinh 1 merge commit)</i>
+<b>git</b> pull
+
+<i># B. Đặt commit của mình lên trên (lịch sử thẳng, đẹp hơn)</i>
+<b>git</b> pull --rebase
+
+<i># C. Vứt hết công sức local, lấy y hệt remote (KHÔNG hồi phục)</i>
+<b>git</b> fetch origin &amp;&amp; <b>git</b> reset --hard origin/main</code></pre></div>
+  </details>
+
+  <div class="tip" style="margin-top:26px">
+    <b>Nguyên tắc cuối cùng</b>
+    <p>Trước khi chạy bất kỳ lệnh nào bạn không chắc, hãy tạo một nhánh cứu hộ: <code>git branch backup-$(date +%s)</code>. Mất 1 giây, và nó biến mọi thao tác nguy hiểm thành có thể quay đầu. Đây là thói quen của người đã từng mất code một lần.</p>
+  </div>
+</section>
+
+    </div>
+  </div>
+
+  <footer>
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <p style="margin:0">Mảng 03 · Git &amp; GitHub — phần lý thuyết chi tiết hơn nằm ở <a href="README.md">README.md</a> của mảng.</p>
+        <p style="margin:4px 0 0" class="small">Tra cứu chính thức: <a href="https://git-scm.com/docs">git-scm.com/docs</a> · Học tương tác: <a href="https://learngitbranching.js.org">learngitbranching.js.org</a></p>
+      </div>
+      <a href="../index.html" class="mono small">← Về bản đồ học tập</a>
+    </div>
+  </footer>
+
+</main>
+
+<script src="../assets/hoc.js"></script>
+</body>
+</html>

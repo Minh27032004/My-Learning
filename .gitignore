@@ -1,0 +1,37 @@
+# ---- Bí mật & cấu hình môi trường ----
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+credentials.json
+*.local.json
+settings.local.json
+
+# ---- Tài liệu và ghi chú nội bộ ----
+HANDOFF.md
+NOTES.md
+plan-*.md
+*-design.md
+# ...trừ lộ trình công khai, vốn là nội dung chính của repo
+!roadmap/*.md
+draft-*.txt
+drafts/
+tools/
+
+# ---- Rác của hệ điều hành / trình soạn thảo ----
+Thumbs.db
+desktop.ini
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# ---- Sản phẩm build & log ----
+node_modules/
+dist/
+build/
+*.log
+__pycache__/
+.pytest_cache/
